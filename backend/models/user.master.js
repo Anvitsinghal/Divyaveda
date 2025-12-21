@@ -47,6 +47,10 @@ const userSchema = new mongoose.Schema(
     last_login: {
       type: Date
     },
+    isSuperAdmin: {
+  type: Boolean,
+  default: false
+},
 
     created_by: {
       type: String,

@@ -4,7 +4,7 @@ export const createRole = async (req, res) => {
   try {
     const { roleName, description, screen_access } = req.body;
 
-    const existing = await Role.findOne({ roleName });
+    const existing = await Role.findOne({ role_name: roleName });
     if (existing) {
       return res.status(400).json({
         message: "Role already exists"
@@ -12,7 +12,7 @@ export const createRole = async (req, res) => {
     }
 
     const role = await Role.create({
-      roleName,
+      role_name: roleName,
       description,
       screen_access,
       created_by: req.user.id
@@ -57,7 +57,7 @@ export const updateRole = async (req, res) => {
     const { roleName, description, screen_access } = req.body;
 
     const updates = {};
-    if (roleName !== undefined) updates.roleName = roleName;
+    if (roleName !== undefined) updates.role_name = roleName;
     if (description !== undefined) updates.description = description;
     if (screen_access !== undefined) updates.screen_access = screen_access;
 

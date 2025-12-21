@@ -75,7 +75,7 @@ export const removeRoleFromUser = async (req, res) => {
   
     if (activeRoleCount === 0) {
       const simpleUserRole = await Role.findOne({
-        roleName: "simple_user"
+        role_name: "simple_user"
       });
 
       if (!simpleUserRole) {
@@ -101,6 +101,19 @@ export const removeRoleFromUser = async (req, res) => {
 };
 
 export const getRolesByUser = async (req, res) => {
+  try {
+    const roles = await UserRoleMap.find({
+      user_id: req.params.userId,
+      isActive: true
+    }).populate("role_id");
+
+    res.json(roles);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getUserRoles = async (req, res) => {
   try {
     const roles = await UserRoleMap.find({
       user_id: req.params.userId,

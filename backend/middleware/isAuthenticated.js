@@ -25,13 +25,14 @@ export const isAuthenticated = async (req, res, next) => {
       });
     }
 
+    // ✅ SINGLE SOURCE OF TRUTH
     req.user = {
       id: user._id,
       email: user.email,
-      isSuperAdmin: user.email === process.env.SUPERADMIN_EMAIL
+      isSuperAdmin: user.isSuperAdmin === true
     };
 
-    next();
+    return next();
   } catch (error) {
     return res.status(401).json({
       message: "Invalid or expired token"

@@ -73,6 +73,13 @@ app.use("/api/admin/user-roles", userRoleMapRoutes);
 app.use("/api/admin/analytics", analyticsRoutes);
 
 // ===== 404 HANDLER =====
+app.get("/", (req, res) => {
+  res.json({
+    message: "Backend is running",
+    status: "OK"
+  });
+});
+
 app.use((req, res) => {
   res.status(404).json({
     message: "API route not found"
@@ -83,7 +90,7 @@ app.use((req, res) => {
 const PORT = process.env.PORT || 8000;
 
 mongoose
-  .connect(process.env.MONGODB_URI)
+  .connect(process.env.MONGOURL)
   .then(() => {
     console.log("✅ MongoDB connected");
 
