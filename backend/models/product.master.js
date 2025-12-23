@@ -16,7 +16,7 @@ const productSchema = new mongoose.Schema(
 
     subcategory_id: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Subcategory",
+      ref: "SubCategory",
       required: true
     },
 
@@ -27,7 +27,7 @@ const productSchema = new mongoose.Schema(
     // main image shown on product card
     main_image: {
       type: String,
-      required: true
+      
     },
 
     // additional product images (4–10)
