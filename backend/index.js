@@ -2,7 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import mongoose from "mongoose";
-
+import userAdminRoutes from "./routes/admin/user.routes.js"
 // ===== ROUTES =====
 import authRoutes from "./routes/auth.routes.js";
 import cartRoutes from "./routes/cart.routes.js";
@@ -49,7 +49,7 @@ app.get("/health", (req, res) => {
 // ===== AUTH & USER =====
 app.use("/api/auth", authRoutes);
 app.use("/api/cart", cartRoutes);
-
+app.use("/api/admin/users", userAdminRoutes);
 // ===== PUBLIC APIs =====
 app.use("/api/products", publicProductRoutes);
 

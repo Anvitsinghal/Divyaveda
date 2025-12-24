@@ -44,10 +44,25 @@ export const createVendor = async (req, res) => {
 
 export const getAllVendors = async (req, res) => {
   try {
-    const vendors = await Vendor.find({ isActive: true })
-      .sort({ created_at: -1 });
+    // STEP 1: Find the ID for the "Vendor" role
+    // We use a regex to make it case-insensitive (matches "Vendor", "vendor", "VENDOR")
+    const vendorRole = await Role.findOne({ role_name: { $regex: /^vendor$/i } });
 
-    res.json(vendors);
+    // Safety check: If the role doesn't exist yet, return empty list
+    if (!vendorRole) {
+      return res.json({ vendors: [] });
+    }
+
+    // STEP 2: The Actual Query
+    // Find users where 'role_id' matches the Vendor Role ID
+    const vendors = await User.find({ role_id: vendorRole._id })
+      .select("-password")           // Don't send passwords
+      .populate("role_id", "role_name") // Show the role name in the result
+      .sort({ createdAt: -1 });
+
+    // Return the list of users
+    res.json({ vendors });
+    
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

@@ -55,7 +55,7 @@ export const login = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
-
+const permissions = user.role_id?.screen_access || [];
     
     user.last_login = new Date();
     await user.save();
@@ -69,7 +69,16 @@ export const login = async (req, res) => {
 
     res.json({
       message: "Login successful",
-      token
+      token,
+      admin: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role_id?.role_name,
+        permissions: permissions, // <--- FRONTEND NEEDS THIS TO SHOW LINKS
+        isSuperAdmin: user.isSuperAdmin
+      }
+      
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -80,7 +89,16 @@ export const login = async (req, res) => {
 export const getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
-    res.json(user);
+    const permissions = user.role_id?.screen_access || []; 
+
+    res.json({
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role_id?.role_name,
+      permissions: permissions, // <--- THIS UNLOCKS THE SIDEBAR
+      isSuperAdmin: user.isSuperAdmin
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

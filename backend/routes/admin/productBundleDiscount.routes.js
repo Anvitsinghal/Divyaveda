@@ -1,9 +1,9 @@
 import express from "express";
-import {
-  applyDiscountToProduct,
-  getDiscountsByProduct,
-  removeDiscountFromProduct
-} from "../../controllers/productBundleDiscount.controller.js";
+import { 
+  applyDiscountToProduct, 
+  getDiscountsByProduct, 
+  removeDiscountFromProduct 
+} from "../../controllers/productBundleDiscount.controller.js"; // Importing YOUR function names
 
 import { isAuthenticated } from "../../middleware/isAuthenticated.js";
 import { loadUserRoles } from "../../middleware/loadUserRoles.js";
@@ -11,16 +11,16 @@ import { checkPermission } from "../../middleware/checkPermission.js";
 
 const router = express.Router();
 
-/* ================= APPLY DISCOUNT TO PRODUCT ================= */
+// 1. Create (Apply Discount)
 router.post(
   "/",
   isAuthenticated,
   loadUserRoles,
-  checkPermission("PRODUCT_BUNDLE_DISCOUNT_CREATE"),
+  checkPermission("PRODUCT_BUNDLE_DISCOUNT_CREATE"), 
   applyDiscountToProduct
 );
 
-/* ================= GET DISCOUNTS BY PRODUCT ================= */
+// 2. Read (Get Active Discounts)
 router.get(
   "/:productId",
   isAuthenticated,
@@ -29,7 +29,7 @@ router.get(
   getDiscountsByProduct
 );
 
-/* ================= REMOVE DISCOUNT FROM PRODUCT ================= */
+// 3. Delete (Soft Remove)
 router.delete(
   "/:id",
   isAuthenticated,

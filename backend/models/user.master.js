@@ -20,7 +20,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true
     },
-
+role_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Role", // This allows .populate("role_id") to work
+      default: null
+    },
     phone_number: {
       type: String,
       required: true

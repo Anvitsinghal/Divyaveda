@@ -15,12 +15,10 @@ const roleSchema = new mongoose.Schema(
     },
 
     // which screens this role can access
-    screen_access: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Screen"
-      }
-    ],
+    screen_access: {
+      type: [String], 
+      default: []
+    },
 
     isActive: {
       type: Boolean,

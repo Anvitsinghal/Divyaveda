@@ -59,13 +59,17 @@ export const addRelatedProduct = async (req, res) => {
 
 export const getRelatedProducts = async (req, res) => {
   try {
-    const relations = await RelatedProduct.find({
-      product_id: req.params.productId,
-      isActive: true
-    }).populate("related_product_id");
+    const { productId } = req.params;
 
-    res.json(relations);
+    // CRITICAL FIX: We must POPULATE 'related_product_id'
+    // This turns the ID string into a full Object { name: "...", price: 100 }
+    const relatedProducts = await RelatedProduct.find({ product_id: productId })
+      .populate("related_product_id") 
+      .populate("product_id", "name");
+
+    res.status(200).json({ relatedProducts });
   } catch (error) {
+    console.error("Get Related Error:", error);
     res.status(500).json({ message: error.message });
   }
 };

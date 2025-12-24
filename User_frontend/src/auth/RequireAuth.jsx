@@ -6,12 +6,12 @@ const RequireAuth = () => {
     const location = useLocation();
 
     if (loading) {
-        return <div>Loading...</div>; // Replace with a nice spinner later
+        return <div>Loading...</div>;
     }
 
     return (
         user 
-            ? <Outlet /> // Renders the child route (e.g., Profile, Checkout)
+            ? <Outlet />
             : <Navigate to="/login" state={{ from: location }} replace />
     );
 }

@@ -1,20 +1,26 @@
 import { Role } from "../models/role.master.js";
+import { User } from "../models/user.master.js"; // Import User for safety check
 
+// 1. CREATE ROLE
 export const createRole = async (req, res) => {
   try {
-    const { roleName, description, screen_access } = req.body;
+    // FIXED: Destructure 'role_name' (matching frontend), not 'roleName'
+    const { role_name, description, screen_access } = req.body;
 
-    const existing = await Role.findOne({ role_name: roleName });
+    if (!role_name) {
+      return res.status(400).json({ message: "Role name is required" });
+    }
+
+    const existing = await Role.findOne({ role_name });
     if (existing) {
-      return res.status(400).json({
-        message: "Role already exists"
-      });
+      return res.status(400).json({ message: "Role already exists" });
     }
 
     const role = await Role.create({
-      role_name: roleName,
+      role_name,
       description,
-      screen_access,
+      // Ensure it's an array of strings
+      screen_access: screen_access || [], 
       created_by: req.user.id
     });
 
@@ -23,27 +29,30 @@ export const createRole = async (req, res) => {
       role
     });
   } catch (error) {
+    console.error("Create Role Error:", error);
     res.status(500).json({ message: error.message });
   }
 };
 
+// 2. GET ALL ROLES
 export const getAllRoles = async (req, res) => {
   try {
-    const roles = await Role.find().populate("screen_access");
-    res.json(roles);
+    // FIXED: Removed .populate("screen_access") because it's just an array of strings now.
+    const roles = await Role.find(); 
+    res.json({ roles }); // Ensure response structure matches frontend expectation
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
+// 3. GET ROLE BY ID
 export const getRoleById = async (req, res) => {
   try {
-    const role = await Role.findById(req.params.id).populate("screen_access");
+    // FIXED: Removed .populate("screen_access")
+    const role = await Role.findById(req.params.id);
 
     if (!role) {
-      return res.status(404).json({
-        message: "Role not found"
-      });
+      return res.status(404).json({ message: "Role not found" });
     }
 
     res.json(role);
@@ -52,27 +61,28 @@ export const getRoleById = async (req, res) => {
   }
 };
 
+// 4. UPDATE ROLE
 export const updateRole = async (req, res) => {
   try {
-    const { roleName, description, screen_access } = req.body;
+    // FIXED: Destructure 'role_name' to match frontend payload
+    const { role_name, description, screen_access } = req.body;
 
     const updates = {};
-    if (roleName !== undefined) updates.role_name = roleName;
+    if (role_name !== undefined) updates.role_name = role_name;
     if (description !== undefined) updates.description = description;
     if (screen_access !== undefined) updates.screen_access = screen_access;
 
     updates.updated_by = req.user.id;
 
+    // FIXED: Removed .populate("screen_access")
     const role = await Role.findByIdAndUpdate(
       req.params.id,
       updates,
       { new: true }
-    ).populate("screen_access");
+    );
 
     if (!role) {
-      return res.status(404).json({
-        message: "Role not found"
-      });
+      return res.status(404).json({ message: "Role not found" });
     }
 
     res.json({
@@ -84,24 +94,30 @@ export const updateRole = async (req, res) => {
   }
 };
 
-
+// 5. DELETE ROLE
 export const deleteRole = async (req, res) => {
   try {
-    const role = await Role.findByIdAndUpdate(
-      req.params.id,
-      { isActive: false, updated_by: req.user.id },
-      { new: true }
-    );
+    const roleId = req.params.id;
 
-    if (!role) {
-      return res.status(404).json({
-        message: "Role not found"
+    // A. Safety Check: Don't delete if Users are assigned
+    // We check if any ACTIVE user has this role_id
+    const usersWithRole = await User.countDocuments({ role_id: roleId, isActive: true });
+    
+    if (usersWithRole > 0) {
+      return res.status(400).json({ 
+        message: `Cannot delete: ${usersWithRole} user(s) are currently assigned this role.` 
       });
     }
 
-    res.json({
-      message: "Role deactivated successfully"
-    });
+    // B. Hard Delete (Actually remove it)
+    // This fixes the issue where "Deleted" roles were still showing up
+    const role = await Role.findByIdAndDelete(roleId);
+
+    if (!role) {
+      return res.status(404).json({ message: "Role not found" });
+    }
+
+    res.json({ message: "Role deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

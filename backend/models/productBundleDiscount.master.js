@@ -13,7 +13,10 @@ const productBundleDiscountSchema = new mongoose.Schema(
       ref: "BundleDiscount",
       required: true
     },
-
+isActive: {
+      type: Boolean,
+      default: true
+    },
     created_by: {
       type: String,
       default: "system"

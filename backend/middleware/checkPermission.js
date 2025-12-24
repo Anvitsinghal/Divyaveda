@@ -1,62 +1,60 @@
 import { Role } from "../models/role.master.js";
-import { Screen } from "../models/screen.master.js";
+import { User } from "../models/user.master.js"; // <--- ADD THIS IMPORT
 
-export const checkPermission = (routeName) => {
+export const checkPermission = (requiredPermission) => {
   return async (req, res, next) => {
     try {
-      // superadmin bypass
-      if (req.user.isSuperAdmin) {
+      // 1. Check if we already have the Role ID
+      let userRoleId = req.user.role_id;
+      let userRoleName = ""; // To store name for super admin check
+          if (req.user.isSuperAdmin) {
+
         return next();
+
       }
-
-      // Ensure roles are loaded
-      if (!req.user.roles || req.user.roles.length === 0) {
-        return res.status(403).json({
-          message: "No roles assigned. Access denied."
-        });
-      }
-
-      // Find the screen that contains this route/permission
-      const screen = await Screen.findOne({
-        routes: routeName,
-        isActive: true
-      });
-
-      if (!screen) {
-        // If screen not found, allow access (permissive approach)
-        // Or deny: return res.status(403).json({ message: "Permission not configured" });
-        return next();
-      }
-
-      // Get all roles with their screen_access
-      const userRoles = await Role.find({
-        role_name: { $in: req.user.roles },
-        isActive: true
-      }).populate("screen_access");
-
-      // Check if any of the user's roles have access to this screen
-      const screenId = screen._id.toString();
-      const hasAccess = userRoles.some(role => {
-        if (!role.screen_access || !Array.isArray(role.screen_access)) {
-          return false;
+      // ---------------------------------------------------------
+      // 🚑 SELF-HEALING FIX: If Role ID is missing, fetch it now!
+      // ---------------------------------------------------------
+      if (!userRoleId) {
+        console.log(`⚠️ Role ID missing for user ${req.user.id}. Fetching from DB...`);
+        const user = await User.findById(req.user.id);
+        
+        if (!user || !user.role_id) {
+           console.log("❌ Denied: User has no role assigned in DB.");
+           return res.status(403).json({ message: "Access Denied: No Role Assigned" });
         }
-        return role.screen_access.some(
-          roleScreen => roleScreen._id.toString() === screenId
-        );
-      });
+        
+        userRoleId = user.role_id; // Found it!
+      }
+      // ---------------------------------------------------------
 
-      if (!hasAccess) {
-        return res.status(403).json({
-          message: "Insufficient permissions. Access denied."
-        });
+      // 2. Fetch the Role Details (Permissions)
+      const role = await Role.findById(userRoleId);
+
+      if (!role) {
+        console.log("❌ Denied: Role ID exists but Role not found in DB.");
+        return res.status(403).json({ message: "Access Denied: Role not found" });
       }
 
-      next();
-    } catch (error) {
-      return res.status(500).json({
-        message: "Permission check failed",
-        error: error.message
+      // 3. Super Admin Bypass
+      if (role.role_name === "Super Admin") {
+        return next();
+      }
+
+      // 4. CHECK PERMISSION
+      if (role.screen_access && role.screen_access.includes(requiredPermission)) {
+        return next(); // ✅ Success
+      }
+
+      // 5. Fail
+      console.log(`❌ Denied: Role '${role.role_name}' lacks '${requiredPermission}'`);
+      return res.status(403).json({ 
+        message: `Access Denied: You need ${requiredPermission} permission.` 
       });
+
+    } catch (error) {
+      console.error("RBAC Error:", error);
+      res.status(500).json({ message: "Server Error during permission check" });
     }
   };
 };

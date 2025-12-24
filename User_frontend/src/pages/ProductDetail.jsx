@@ -1,28 +1,27 @@
-import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import api from '../api/axios';
-import { useCart } from '../context/CartContext';
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import api from "../api/axios";
+import { useCart } from "../context/CartContext";
 
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { addToCart } = useCart(); // <--- Get the function from context
+  const { addToCart } = useCart();
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
-  const [isAdding, setIsAdding] = useState(false); // <--- UI State for button
+  const [isAdding, setIsAdding] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchProduct = async () => {
       try {
         const response = await api.get(`/products/${id}`);
-        // Handle if backend returns { product: {...} } or just {...}
-        // Also handle the structure if it's nested like response.data.data
         const data = response.data.product || response.data.data || response.data;
         setProduct(data);
       } catch (err) {
-        console.error("Error fetching product", err);
+        setError("Unable to load product");
       } finally {
         setLoading(false);
       }
@@ -32,11 +31,9 @@ const ProductDetail = () => {
   }, [id]);
 
   const handleAddToCart = async () => {
-    if (isAdding) return; // Prevent double clicks
-    
+    if (isAdding) return;
     setIsAdding(true);
-    // Call the context function which handles the API POST request
-    await addToCart(product._id, quantity); 
+    await addToCart(product._id, quantity);
     setIsAdding(false);
   };
 
@@ -44,54 +41,56 @@ const ProductDetail = () => {
   if (!product) return <div className="p-10 text-center">Product not found</div>;
 
   return (
-    <div className="container mx-auto p-6">
-      <button 
-        onClick={() => navigate(-1)}
-        className="text-gray-500 mb-4 hover:underline"
-      >
-        &larr; Back to Products
+    <div className="space-y-6">
+      <button onClick={() => navigate(-1)} className="text-slate-400 hover:text-white text-sm">
+        Back
       </button>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-        {/* Left: Image Placeholder */}
-        <div className="bg-gray-200 h-96 rounded-lg flex items-center justify-center text-gray-500">
-           {/* If you have images later: <img src={product.image} /> */}
-           [Image Placeholder]
+        <div className="bg-slate-900 border border-slate-800 h-96 rounded-2xl flex items-center justify-center overflow-hidden">
+          {product.main_image ? (
+            <img src={product.main_image} alt={product.name} className="w-full h-full object-cover" />
+          ) : (
+            <div className="text-slate-600 text-sm">No image</div>
+          )}
         </div>
-
-        {/* Right: Details */}
-        <div>
-          <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
-          <p className="text-xl text-blue-600 font-semibold mb-4">${product.price || 'N/A'}</p>
-          
-          <div className="bg-gray-50 p-4 rounded mb-6">
-            <h3 className="font-bold mb-2">Description</h3>
-            <p className="text-gray-700">{product.description}</p>
+        <div className="space-y-4">
+          <div>
+            <h1 className="text-3xl font-bold text-white">{product.name}</h1>
+            <p className="text-xl text-blue-400 font-semibold">${product.price || "N/A"}</p>
           </div>
-
-          {/* Add to Cart Section */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-2">
+            <div className="text-sm text-slate-300">{product.description}</div>
+            {product.advantages && (
+              <div className="text-sm text-slate-400">Advantages: {product.advantages}</div>
+            )}
+            {product.volume && <div className="text-sm text-slate-400">Volume: {product.volume}</div>}
+            {product.stock_quantity !== undefined && (
+              <div className="text-sm text-slate-400">Stock: {product.stock_quantity}</div>
+            )}
+          </div>
+          {error && <div className="text-red-400 text-sm">{error}</div>}
           <div className="flex items-center gap-4">
-             <div className="flex border rounded">
-                <button 
-                  className="px-3 py-1 bg-gray-100 hover:bg-gray-200"
-                  onClick={() => setQuantity(prev => Math.max(1, prev - 1))}
-                >-</button>
-                <span className="px-4 py-1">{quantity}</span>
-                <button 
-                  className="px-3 py-1 bg-gray-100 hover:bg-gray-200"
-                  onClick={() => setQuantity(prev => prev + 1)}
-                >+</button>
-             </div>
-             
-             <button 
-               onClick={handleAddToCart}
-               disabled={isAdding} // Disable while sending request
-               className={`px-6 py-2 rounded flex-1 text-white transition
-                 ${isAdding ? 'bg-gray-400 cursor-not-allowed' : 'bg-black hover:bg-gray-800'}
-               `}
-             >
-               {isAdding ? 'Adding...' : 'Add to Cart'}
-             </button>
+            <div className="flex items-center rounded-full border border-slate-700 bg-slate-900">
+              <button
+                className="px-3 py-2 text-white"
+                onClick={() => setQuantity(prev => Math.max(1, prev - 1))}
+              >
+                -
+              </button>
+              <span className="px-4 text-white">{quantity}</span>
+              <button className="px-3 py-2 text-white" onClick={() => setQuantity(prev => prev + 1)}>
+                +
+              </button>
+            </div>
+            <button
+              onClick={handleAddToCart}
+              disabled={isAdding}
+              className={`px-6 py-3 rounded-full font-semibold transition ${
+                isAdding ? "bg-slate-700 text-slate-300" : "bg-blue-600 text-white hover:bg-blue-500"
+              }`}
+            >
+              {isAdding ? "Adding..." : "Add to cart"}
+            </button>
           </div>
         </div>
       </div>

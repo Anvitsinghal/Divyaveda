@@ -4,9 +4,9 @@ import { BundleDiscount } from "../models/bundleDiscount.master.js";
 
 export const applyDiscountToProduct = async (req, res) => {
   try {
-    const { product_id, bundle_discount_id } = req.body;
+    const { product_id, bundle_id } = req.body;
 
-    if (!product_id || !bundle_discount_id) {
+    if (!product_id || !bundle_id) {
       return res.status(400).json({
         message: "Product and bundle discount are required"
       });
@@ -23,7 +23,7 @@ export const applyDiscountToProduct = async (req, res) => {
 
    
     const discount = await BundleDiscount.findOne({
-      _id: bundle_discount_id,
+      _id: bundle_id,
       isActive: true
     });
     if (!discount) {
@@ -32,7 +32,7 @@ export const applyDiscountToProduct = async (req, res) => {
 
     const existing = await ProductBundleDiscount.findOne({
       product_id,
-      bundle_discount_id,
+      bundle_id,
       isActive: true
     });
 
@@ -44,7 +44,7 @@ export const applyDiscountToProduct = async (req, res) => {
 
     const mapping = await ProductBundleDiscount.create({
       product_id,
-      bundle_discount_id,
+      bundle_id,
       isActive: true,
       created_by: req.user.id
     });
@@ -63,7 +63,7 @@ export const getDiscountsByProduct = async (req, res) => {
     const discounts = await ProductBundleDiscount.find({
       product_id: req.params.productId,
       isActive: true
-    }).populate("bundle_discount_id");
+    }).populate("bundle_id");
 
     res.json(discounts);
   } catch (error) {
@@ -95,3 +95,4 @@ export const removeDiscountFromProduct = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
