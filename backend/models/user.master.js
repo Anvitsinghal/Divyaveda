@@ -55,6 +55,10 @@ role_id: {
   type: Boolean,
   default: false
 },
+isEmailVerified: {
+  type: Boolean,
+  default: false
+},
 
     created_by: {
       type: String,

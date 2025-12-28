@@ -5,6 +5,70 @@ import { UserAnalysis } from "../models/userAnalysis.master.js";
 import { Order } from "../models/order.master.js";
 import { Payment } from "../models/payment.master.js";
 import { Cart } from "../models/cart.master.js";
+import { sendOtpEmail } from "../utils/sendOtpEmail.js";
+import { Otp } from "../models/otp.master.js";
+import dotenv from "dotenv";
+dotenv.config();
+export const verifyOtpAndRegister = async (req, res) => {
+  try {
+    const { username, email, password, phone_number, otp } = req.body;
+
+    const record = await Otp.findOne({ email, otp });
+
+    if (!record || record.expiresAt < new Date()) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+ await User.create({
+  username,
+  email,
+  phone_number,
+  password: hashedPassword,
+  isEmailVerified: true
+});
+
+
+    await Otp.deleteMany({ email });
+
+    res.status(201).json({ message: "User registered successfully" });
+  } catch (err) {   
+    res.status(500).json({ message: err.message });
+  }
+};
+
+export const sendOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    await Otp.deleteMany({ email });
+
+    await Otp.create({
+      email,
+      otp,
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000)
+    });
+
+   // console.log("OTP GENERATED:", otp);
+await sendOtpEmail(email, otp);
+
+
+    res.json({ message: "OTP sent to email" });
+  } catch (error) {
+  console.error(
+    "BREVO FULL ERROR:",
+    error?.response?.body || error
+  );
+
+  res.status(500).json({
+    message: "OTP email failed"
+  });
+}
+
+};
 
 export const register = async (req, res) => {
   try {
@@ -37,7 +101,7 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email});
+    const user = await User.findOne({ email }).populate("role_id");
     if (!user) {
       return res.status(404).json({ message: "Invalid credentials" });
     }
@@ -49,13 +113,18 @@ export const login = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
-
+// if (!user.isEmailVerified) {
+//   return res.status(403).json({
+//     message: "Please verify your email before logging in"
+//   });
+// }
     const token = jwt.sign(
       { id: user._id },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
-const permissions = user.role_id?.screen_access || [];
+
+    const permissions = user.role_id?.screen_access || [];
     
     user.last_login = new Date();
     await user.save();
@@ -72,13 +141,12 @@ const permissions = user.role_id?.screen_access || [];
       token,
       admin: {
         id: user._id,
-        name: user.name,
+        name: user.username,
         email: user.email,
-        role: user.role_id?.role_name,
-        permissions: permissions, // <--- FRONTEND NEEDS THIS TO SHOW LINKS
-        isSuperAdmin: user.isSuperAdmin
+        role: user.role_id?.role_name || null,
+        permissions: permissions,
+        isSuperAdmin: user.isSuperAdmin || false
       }
-      
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -88,16 +156,23 @@ const permissions = user.role_id?.screen_access || [];
 
 export const getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select("-password");
-    const permissions = user.role_id?.screen_access || []; 
+    const user = await User.findById(req.user.id)
+      .select("-password")
+      .populate("role_id");
+    
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const permissions = user.role_id?.screen_access || [];
 
     res.json({
       id: user._id,
-      name: user.name,
+      name: user.username,
       email: user.email,
-      role: user.role_id?.role_name,
-      permissions: permissions, // <--- THIS UNLOCKS THE SIDEBAR
-      isSuperAdmin: user.isSuperAdmin
+      role: user.role_id?.role_name || null,
+      permissions: permissions,
+      isSuperAdmin: user.isSuperAdmin || false
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

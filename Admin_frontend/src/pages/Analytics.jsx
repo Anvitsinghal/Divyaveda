@@ -2,20 +2,35 @@ import { useEffect, useState } from "react";
 import api from "../api/axios";
 import PermissionGate from "../components/PermissionGate";
 
+// Charts
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid
+} from "recharts";
+
 const Analytics = () => {
   const [sessions, setSessions] = useState([]);
   const [dau, setDau] = useState([]);
-  
+
   // Search States
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState("");
-  
+  const [selectedUserLabel, setSelectedUserLabel] = useState("");
+
   const [history, setHistory] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
+  // ---------------- SAFE DATA EXTRACT ----------------
   const safeExtract = (data, key) => {
     if (Array.isArray(data)) return data;
     if (data && Array.isArray(data[key])) return data[key];
@@ -23,15 +38,39 @@ const Analytics = () => {
     return [];
   };
 
-  // 1. Load Initial Dashboard Data
+  // ---------------- LOAD DASHBOARD ----------------
   const loadDashboardData = async () => {
     try {
-      const [sessRes, dauRes] = await Promise.all([
-        api.get("/admin/analytics/sessions"),
-        api.get("/admin/analytics/daily-active-users")
-      ]);
-      setSessions(safeExtract(sessRes.data, "sessions"));
-      setDau(safeExtract(dauRes.data, "daily_active_users"));
+      const sessRes = await api.get("/admin/analytics/sessions");
+      const dauRes = await api.get("/admin/analytics/daily-active-users");
+
+      // ---- Sessions (unchanged)
+      const sessionData =
+        sessRes.data.sessions ||
+        sessRes.data.data ||
+        sessRes.data ||
+        [];
+
+      setSessions(Array.isArray(sessionData) ? sessionData : []);
+
+      // ---- DAU (🔥 ONLY FIX HERE 🔥)
+      const rawDau =
+        dauRes.data.daily_active_users ||
+        dauRes.data.dailyActiveUsers ||
+        dauRes.data.dau ||
+        dauRes.data.data ||
+        dauRes.data ||
+        null;
+
+      // BACKEND RETURNS OBJECT → WRAP INTO ARRAY
+      const dauArray = Array.isArray(rawDau)
+        ? rawDau
+        : rawDau
+          ? [rawDau]
+          : [];
+
+      setDau(dauArray);
+
     } catch (e) {
       console.error("Dashboard load error", e);
     } finally {
@@ -43,144 +82,227 @@ const Analytics = () => {
     loadDashboardData();
   }, []);
 
-  // 2. Handle User Search (Auto-Suggest)
+  // ---------------- USER SEARCH ----------------
   useEffect(() => {
-    const delayDebounceFn = setTimeout(async () => {
+    const delay = setTimeout(async () => {
       if (searchQuery.length < 2) {
         setSearchResults([]);
         return;
       }
-      
       try {
-        // NOTE: Ensure your backend has a search route or returns users at this endpoint
-        // If this 404s, we need to create the backend route: router.get('/search', ...)
-        const res = await api.get(`/admin/users/search?query=${searchQuery}`);
+        const res = await api.get(
+          `/admin/users/search?query=${searchQuery}`
+        );
         setSearchResults(res.data.users || res.data || []);
         setShowSuggestions(true);
-      } catch (e) {
-        // Fallback: If no search API, user can still type exact ID
-        console.warn("User search failed (API might be missing)");
+      } catch {
+        console.warn("Search API missing");
       }
-    }, 500); // 500ms delay to prevent spamming API
+    }, 400);
 
-    return () => clearTimeout(delayDebounceFn);
+    return () => clearTimeout(delay);
   }, [searchQuery]);
 
-  // 3. Load History for Selected User
-  const loadHistory = async (userIdToFetch) => {
-    if (!userIdToFetch) return;
+  // ---------------- LOAD HISTORY (UNCHANGED) ----------------
+  const loadHistory = async (userId) => {
+    if (!userId) return;
     try {
-      const res = await api.get(`/admin/analytics/login-history/${userIdToFetch}`);
+      const res = await api.get(
+        `/admin/analytics/login-history/${userId}`
+      );
       setHistory(safeExtract(res.data, "history"));
       setError("");
-    } catch (e) {
+    } catch {
       setHistory([]);
-      setError("Could not load history for this user");
+      setError("Could not load history");
     }
   };
 
-  // 4. Handle Selection from Dropdown
+  // ---------------- HELPERS ----------------
+  const renderUserLabel = (user) => {
+    if (!user) return "Guest";
+    if (typeof user === "object") {
+      return user.username || user.email || user._id;
+    }
+    return user;
+  };
+
   const handleSelectUser = (user) => {
     setSelectedUserId(user._id);
-    setSearchQuery(user.email || user.username); // Show name in box
-    setShowSuggestions(false); // Hide dropdown
-    loadHistory(user._id); // Auto-load history
+    setSelectedUserLabel(user.username || user.email);
+    setSearchQuery(user.email || user.username);
+    setShowSuggestions(false);
+    loadHistory(user._id);
   };
 
-  // Helper to render user info safely
-  const renderUserLabel = (userField) => {
-    if (!userField) return "Guest";
-    if (typeof userField === 'object') {
-        return userField.username || userField.email || userField._id;
-    }
-    return userField;
+  const clearSelection = () => {
+    setSelectedUserId("");
+    setSelectedUserLabel("");
+    setSearchQuery("");
+    setHistory([]);
   };
 
-  if (loading) return <div className="p-6 text-slate-400">Loading Analytics...</div>;
+  // ---------------- CHART DATA ----------------
+
+  // 🔥 FIXED DAU MAPPING (uses totalActiveUsers)
+  const dauChartData = dau.map(d => ({
+    date: new Date(d.date).toLocaleDateString(),
+    count: d.totalActiveUsers
+  }));
+
+  const sessionChartData = Object.values(
+    sessions.reduce((acc, s) => {
+      const label = renderUserLabel(s.user_id);
+      acc[label] = acc[label] || {
+        label,
+        count: 0,
+        userId: typeof s.user_id === "object" ? s.user_id._id : null
+      };
+      acc[label].count += 1;
+      return acc;
+    }, {})
+  );
+
+  if (loading) {
+    return <div className="p-6 text-slate-400">Loading Analytics...</div>;
+  }
 
   return (
     <PermissionGate routeName="ANALYTICS_USER_VIEW">
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-white">Analytics Dashboard</h1>
+
+        <h1 className="text-2xl font-bold text-white">
+          Analytics Dashboard
+        </h1>
+
+        {selectedUserLabel && (
+          <div className="flex items-center justify-between bg-slate-900 border border-blue-500/30 rounded-xl px-4 py-2 text-sm">
+            <span className="text-blue-400">
+              Viewing analytics for: <b>{selectedUserLabel}</b>
+            </span>
+            <button
+              onClick={clearSelection}
+              className="text-red-400 hover:text-red-300"
+            >
+              Clear
+            </button>
+          </div>
+        )}
+
         {error && <div className="text-red-400 text-sm">{error}</div>}
 
         <div className="grid md:grid-cols-3 gap-6">
-          
+
           {/* ACTIVE SESSIONS */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-2">
-            <div className="text-sm text-slate-400">Active sessions</div>
-            <div className="text-3xl font-bold text-white">{sessions.length}</div>
-            <div className="max-h-48 overflow-y-auto space-y-2 text-sm text-slate-300">
-              {sessions.map((s, i) => (
-                <div key={s._id || i} className="border border-slate-800 rounded-xl p-2 bg-slate-950/50">
-                  <div className="font-mono text-xs text-blue-400">{s.ip_address}</div>
-                  <div className="text-xs text-slate-500 truncate">User: {renderUserLabel(s.user_id)}</div>
-                </div>
-              ))}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-4">
+            <div className="text-sm text-slate-400">
+              Active Sessions (click bar)
+            </div>
+
+            <div className="h-44">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={sessionChartData}
+                  onClick={(data) => {
+                    if (!data?.activePayload?.[0]) return;
+                    const payload = data.activePayload[0].payload;
+                    if (payload.userId) {
+                      setSelectedUserId(payload.userId);
+                      setSelectedUserLabel(payload.label);
+                      loadHistory(payload.userId);
+                    }
+                  }}
+                >
+                  <CartesianGrid stroke="#334155" strokeDasharray="3 3" />
+                  <XAxis dataKey="label" hide />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar
+                    dataKey="count"
+                    fill="#38bdf8"
+                    cursor="pointer"
+                    radius={[6, 6, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
 
-          {/* DAILY ACTIVE USERS */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-2">
-            <div className="text-sm text-slate-400">Daily Active Users</div>
-            <div className="text-3xl font-bold text-white">{dau.length}</div>
-            <div className="max-h-48 overflow-y-auto space-y-2 text-sm text-slate-300">
-               {dau.map((d, idx) => (
-                <div key={idx} className="border border-slate-800 rounded-xl p-2 flex justify-between bg-slate-950/50">
-                  <span>{d.date || d._id}</span>
-                  <span className="font-bold text-white">{d.count}</span>
-                </div>
-              ))}
+          {/* DAILY ACTIVE USERS (FIXED) */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-4">
+            <div className="text-sm text-slate-400">
+              Daily Active Users
+            </div>
+
+            <div className="h-44">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={dauChartData}>
+                  <CartesianGrid stroke="#334155" strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Line
+                    type="monotone"
+                    dataKey="count"
+                    stroke="#22c55e"
+                    strokeWidth={2}
+                    dot={{ r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
           </div>
 
-          {/* SEARCH & HISTORY (The New Part) */}
+          {/* USER LOGIN HISTORY (UNCHANGED) */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 flex flex-col relative">
-            <div className="text-sm text-slate-400">User Login History</div>
-            
-            {/* SEARCH BAR */}
-            <div className="relative">
-              <input
-                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:border-blue-500 outline-none"
-                placeholder="Type name or email..."
-                value={searchQuery}
-                onChange={e => {
-                   setSearchQuery(e.target.value);
-                   // If user clears input, clear ID but keep history visible if they want
-                   if(e.target.value === "") setShowSuggestions(false);
-                }}
-                onFocus={() => { if(searchResults.length > 0) setShowSuggestions(true); }}
-              />
-              
-              {/* DROPDOWN RESULTS */}
-              {showSuggestions && searchResults.length > 0 && (
-                <ul className="absolute z-10 w-full bg-slate-800 border border-slate-700 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-xl">
-                  {searchResults.map((user) => (
-                    <li 
-                      key={user._id}
-                      onClick={() => handleSelectUser(user)}
-                      className="px-3 py-2 hover:bg-slate-700 cursor-pointer text-sm text-slate-200 border-b border-slate-700/50 last:border-0"
-                    >
-                      <div className="font-bold">{user.username || "No Name"}</div>
-                      <div className="text-xs text-slate-400">{user.email}</div>
-                    </li>
-                  ))}
-                </ul>
-              )}
+            <div className="text-sm text-slate-400">
+              User Login History
             </div>
 
-            {/* HISTORY LIST */}
-            <div className="flex-1 overflow-y-auto space-y-2 text-sm text-slate-300 mt-2 min-h-[150px]">
+            <input
+              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"
+              placeholder="Search user..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => searchResults.length && setShowSuggestions(true)}
+            />
+
+            {showSuggestions && searchResults.length > 0 && (
+              <ul className="absolute top-20 z-10 w-full bg-slate-800 border border-slate-700 rounded-lg max-h-48 overflow-y-auto">
+                {searchResults.map(user => (
+                  <li
+                    key={user._id}
+                    onClick={() => handleSelectUser(user)}
+                    className="px-3 py-2 hover:bg-slate-700 cursor-pointer text-sm"
+                  >
+                    <b>{user.username || "No Name"}</b>
+                    <div className="text-xs text-slate-400">
+                      {user.email}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <div className="flex-1 overflow-y-auto space-y-2 text-xs">
               {history.length === 0 ? (
-                <div className="text-center text-slate-600 py-4 text-xs">
-                  {selectedUserId ? "No history found for this user" : "Select a user to view history"}
+                <div className="text-slate-600 text-center mt-6">
+                  Select a user to view history
                 </div>
               ) : (
                 history.map((h, i) => (
-                  <div key={h._id || i} className="border border-slate-800 rounded-xl p-2 bg-slate-950/50">
-                    <div className="text-green-400 text-xs">In: {new Date(h.login_time).toLocaleString()}</div>
-                    <div className="text-slate-500 text-xs">
-                      Out: {h.logout_time ? new Date(h.logout_time).toLocaleString() : "Active"}
+                  <div
+                    key={i}
+                    className="border border-slate-800 rounded-lg p-2"
+                  >
+                    <div className="text-green-400">
+                      Login: {new Date(h.login_time).toLocaleString()}
+                    </div>
+                    <div className="text-slate-500">
+                      Logout: {h.logout_time
+                        ? new Date(h.logout_time).toLocaleString()
+                        : "Active"}
                     </div>
                   </div>
                 ))

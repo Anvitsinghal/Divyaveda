@@ -1,30 +1,39 @@
-import { User } from "../../models/user.master.js"; // Ensure path to User model is correct
+import { User } from "../../models/user.master.js";
 import { Role } from "../../models/role.master.js";
+
+// ✅ Helper to escape regex safely
+const escapeRegex = (text = "") => {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+};
 
 export const searchUsers = async (req, res) => {
   try {
     const { query } = req.query;
 
-    if (!query) {
-      return res.status(400).json({ message: "Search query is required" });
+    // Guard: empty or very small query
+    if (!query || query.trim().length < 2) {
+      return res.json({ users: [] });
     }
 
-    // Search for users where Username OR Email matches the query (Case-Insensitive)
+    // 🔐 CRITICAL FIX
+    const safeQuery = escapeRegex(query.trim());
+
     const users = await User.find({
       $or: [
-        { username: { $regex: query, $options: "i" } },
-        { email: { $regex: query, $options: "i" } }
+        { username: { $regex: safeQuery, $options: "i" } },
+        { email: { $regex: safeQuery, $options: "i" } }
       ]
     })
-    .select("_id username email") // ONLY return these fields (Security best practice)
-    .limit(10); // Limit results to prevent crashing the UI
+      .select("_id username email")
+      .limit(10);
 
     res.status(200).json({ users });
   } catch (error) {
     console.error("Search Error:", error);
-    res.status(500).json({ message: "Internal Server Error" });
+    res.status(500).json({ users: [] }); // never crash UI
   }
 };
+
 export const getAllUsers = async (req, res) => {
   try {
     // FILTER: Get users where isSuperAdmin is NOT true
