@@ -20,7 +20,7 @@ import Roles from "./pages/Roles";
 import Screens from "./pages/Screens";
 import UserRoles from "./pages/UserRoles";
 import Analytics from "./pages/Analytics";
-
+import Leads from "./pages/Leads";
 import "./App.css";
 
 // Internal Layout Component (Sidebar + Content Shell)
@@ -94,6 +94,12 @@ const Shell = ({ children }) => {
           <PermissionGate routeName="SCREEN_VIEW">
             <Link to="/admin/screens" className="block px-3 py-2 rounded-lg hover:bg-slate-800 transition-colors">Screen Config</Link>
           </PermissionGate>
+
+          <PermissionGate routeName="LEAD_VIEW">
+  <Link to="/admin/leads" className="block px-3 py-2 rounded-lg hover:bg-slate-800 transition-colors">
+    Lead Management
+  </Link>
+</PermissionGate>
         </nav>
 
         <div className="p-4 border-t border-slate-800">
@@ -145,6 +151,7 @@ function App() {
         <Route path="/admin/screens" element={<Shell><Screens /></Shell>} />
         <Route path="/admin/user-roles" element={<Shell><UserRoles /></Shell>} />
         <Route path="/admin/analytics" element={<Shell><Analytics /></Shell>} />
+        <Route path="/admin/leads" element={<Shell><Leads /></Shell>} />
       </Route>
 
       {/* CATCH ALL - Redirect to Admin Dashboard */}

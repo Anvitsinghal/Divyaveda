@@ -21,6 +21,7 @@ import screenRoutes from "./routes/admin/screen.routes.js";
 import userRoleMapRoutes from "./routes/admin/userRoleMap.routes.js";
 import analyticsRoutes from "./routes/admin/analytics.routes.js";
 
+import leadRoutes from "./routes/admin/lead.routes.js"; // <--- Import
 
 dotenv.config();//for loading env variables
 const app = express();//making instance of express
@@ -55,6 +56,8 @@ app.use("/api/admin/screens", screenRoutes);
 app.use("/api/admin/user-roles", userRoleMapRoutes);
 app.use("/api/admin/analytics", analyticsRoutes);
 
+// ... existing routes ...
+app.use("/api/admin/leads", leadRoutes); // <--- Add this
 app.get("/", (req, res) => { //server starts
   res.json({
     message: "Backend is running",

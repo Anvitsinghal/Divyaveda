@@ -13,7 +13,8 @@ const MODULES = [
   "RELATED_PRODUCT",
   "ROLE",
   "USER",
-  "USER_ROLE"
+  "USER_ROLE",
+  "LEAD"
 ];
 
 const ACTIONS = ["VIEW", "CREATE", "UPDATE", "DELETE"];
