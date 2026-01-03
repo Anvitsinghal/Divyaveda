@@ -4,7 +4,7 @@ import axios from "axios";
 // If we are on Vercel, it uses the hidden environment variable.
 // If we are on Localhost, it uses port 8000.
 // We append "/api" because your backend routes start with /api
-const BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:8000") + "/api";
+const BASE_URL = (import.meta.env.VITE_API_URL || "https://divyaveda.onrender.com") + "/api";
 
 const api = axios.create({
   baseURL: BASE_URL,
