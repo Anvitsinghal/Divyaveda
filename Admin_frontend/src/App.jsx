@@ -5,7 +5,7 @@ import { useAdminAuth } from "./context/AuthContext";
 
 // Page Imports
 import Dashboard from "./pages/Dashboard";
-import Login from "./pages/Login";
+import Login from "./pages/Login";import Register from "./pages/Register";
 import Categories from "./pages/Categories";
 import Subcategories from "./pages/Subcategories";
 import Products from "./pages/Products";
@@ -125,6 +125,7 @@ function App() {
     <Routes>
       {/* PUBLIC ROUTES */}
       <Route path="/admin/login" element={<Login />} />
+      <Route path="/admin/register" element={<Register />} />
 
       {/* PROTECTED ROUTES */}
       <Route element={<ProtectedRoute />}>

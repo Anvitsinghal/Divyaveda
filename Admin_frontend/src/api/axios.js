@@ -25,7 +25,7 @@ api.interceptors.response.use(
     // 403: Permission Denied -> GO TO DASHBOARD (Don't Logout)
     if (status === 403) {
       // Optional: Show an alert
-      alert("You do not have permission to perform this action.");
+      //  alert("You do not have permission to perform this action.");
       
       // If you want to redirect them away from the current page:
       // window.location.href = "/admin/dashboard"; 
