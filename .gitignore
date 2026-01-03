@@ -4,4 +4,3 @@ backend/node_modules/
 backend/.env
 backend/testsheet.js
 backend/credentials.json
-credentials.json
