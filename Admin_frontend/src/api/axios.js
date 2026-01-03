@@ -1,10 +1,18 @@
 import axios from "axios";
 
+// --- 1. SMART BASE URL ---
+// If we are on Vercel, it uses the hidden environment variable.
+// If we are on Localhost, it uses port 8000.
+// We append "/api" because your backend routes start with /api
+const BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:8000") + "/api";
+
 const api = axios.create({
-  baseURL: "http://localhost:8000/api",
-  headers: { "Content-Type": "application/json" }
+  baseURL: BASE_URL,
+  headers: { "Content-Type": "application/json" },
+  withCredentials: true // Matches the CORS setting we added to Backend
 });
 
+// --- 2. REQUEST INTERCEPTOR (Attach Token) ---
 api.interceptors.request.use(config => {
   const token = localStorage.getItem("adminToken");
   if (token) {
@@ -13,28 +21,25 @@ api.interceptors.request.use(config => {
   return config;
 });
 
+// --- 3. RESPONSE INTERCEPTOR (Handle Errors) ---
 api.interceptors.response.use(
   res => res,
   err => {
     const status = err.response?.status;
+    
+    // 401: Unauthorized -> Force Logout
     if (status === 401) {
       localStorage.removeItem("adminToken");
       window.location.href = "/login";
     }
 
-    // 403: Permission Denied -> GO TO DASHBOARD (Don't Logout)
+    // 403: Forbidden -> Stay on page (Optional: Show Alert)
     if (status === 403) {
-      // Optional: Show an alert
-      //  alert("You do not have permission to perform this action.");
-      
-      // If you want to redirect them away from the current page:
-      // window.location.href = "/admin/dashboard"; 
-      
-      // OR just let them stay on the page and see the error alert (Better UX)
+      console.warn("Permission Denied: You do not have access.");
     }
+
     return Promise.reject(err);
   }
 );
 
 export default api;
-
