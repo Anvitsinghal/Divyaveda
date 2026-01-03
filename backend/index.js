@@ -26,7 +26,13 @@ import leadRoutes from "./routes/admin/lead.routes.js"; // <--- Import
 dotenv.config();//for loading env variables
 const app = express();//making instance of express
  //middlewares that run in between response and request
-app.use(cors());//for accepting frontend requests
+app.use(cors({
+  origin: [
+    "http://localhost:5173",                  // For local testing
+    "https://divyaveda-admin.onrender.com"    // <--- Your ACTUAL Frontend URL
+  ],
+  credentials: true // Allows cookies/sessions to work
+}));//for accepting frontend requests
 app.use(express.json({ limit: "10mb" }));//data uploading limit
 app.use(express.urlencoded({ extended: true }));//to parse the url
 
