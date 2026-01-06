@@ -28,10 +28,12 @@ const app = express();//making instance of express
  //middlewares that run in between response and request
 app.use(cors({
   origin: [
-    "http://localhost:5173",                  // For local testing
-    "https://divyaveda-admin.onrender.com"    // <--- Your ACTUAL Frontend URL
+    "http://localhost:5173",                   // Localhost
+    "https://divyaveda-admin.onrender.com",    // (Optional) Old Render link if you still use it
+    "https://divyaveda.in",                    // <--- NEW: Your Custom Domain
+    "https://www.divyaveda.in"                 // <--- NEW: The 'www' version (Safe to add)
   ],
-  credentials: true // Allows cookies/sessions to work
+  credentials: true 
 }));//for accepting frontend requests
 app.use(express.json({ limit: "10mb" }));//data uploading limit
 app.use(express.urlencoded({ extended: true }));//to parse the url
