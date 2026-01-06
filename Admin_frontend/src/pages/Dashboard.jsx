@@ -45,69 +45,69 @@ const Dashboard = () => {
   }, []);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 lg:space-y-8 max-w-full overflow-x-hidden">
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white">Dashboard</h1>
-          <p className="text-slate-400 mt-1">
-            Overview for <span className="text-blue-400">{admin?.email}</span>
+          <h1 className="text-2xl lg:text-3xl font-bold text-[var(--text-primary)]">Dashboard</h1>
+          <p className="text-[var(--text-secondary)] mt-1">
+            Overview for <span className="text-blue-500 dark:text-blue-400">{admin?.email}</span>
           </p>
         </div>
-        <div className="px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-sm">
-           Role: <span className="text-white font-semibold">{admin?.isSuperAdmin ? "Super Admin" : "Staff"}</span>
+        <div className="px-4 py-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-primary)] text-[var(--text-secondary)] text-sm">
+           Role: <span className="text-[var(--text-primary)] font-semibold">{admin?.isSuperAdmin ? "Super Admin" : "Staff"}</span>
         </div>
       </div>
 
       {/* STATS GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
         
         {/* Card 1: Total Products */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 relative overflow-hidden group hover:border-slate-700 transition">
-            <div className="absolute right-0 top-0 p-6 opacity-10 group-hover:opacity-20 transition">
-                <span className="text-6xl font-bold text-blue-500">P</span>
+        <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-2xl p-4 lg:p-6 relative overflow-hidden group hover:border-[var(--border-hover)] transition">
+            <div className="absolute right-0 top-0 p-4 lg:p-6 opacity-10 group-hover:opacity-20 transition">
+                <span className="text-4xl lg:text-6xl font-bold text-blue-500">P</span>
             </div>
-            <div className="text-slate-400 text-sm font-medium">Total Products</div>
-            <div className="text-4xl font-bold text-white mt-2">
+            <div className="text-[var(--text-secondary)] text-sm font-medium">Total Products</div>
+            <div className="text-3xl lg:text-4xl font-bold text-[var(--text-primary)] mt-2">
                 {loading ? "..." : stats.products}
             </div>
-            <Link to="/admin/products" className="text-blue-400 text-sm mt-4 inline-block hover:underline">
+            <Link to="/admin/products" className="text-blue-500 dark:text-blue-400 text-sm mt-4 inline-block hover:underline">
                 View Inventory &rarr;
             </Link>
         </div>
 
         {/* Card 2: Low Stock Alert */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 relative overflow-hidden group hover:border-slate-700 transition">
-            <div className="absolute right-0 top-0 p-6 opacity-10 group-hover:opacity-20 transition">
-                <span className="text-6xl font-bold text-red-500">!</span>
+        <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-2xl p-4 lg:p-6 relative overflow-hidden group hover:border-[var(--border-hover)] transition">
+            <div className="absolute right-0 top-0 p-4 lg:p-6 opacity-10 group-hover:opacity-20 transition">
+                <span className="text-4xl lg:text-6xl font-bold text-red-500">!</span>
             </div>
-            <div className="text-slate-400 text-sm font-medium">Low Stock Items</div>
-            <div className={`text-4xl font-bold mt-2 ${stats.lowStock > 0 ? 'text-red-400' : 'text-green-400'}`}>
+            <div className="text-[var(--text-secondary)] text-sm font-medium">Low Stock Items</div>
+            <div className={`text-3xl lg:text-4xl font-bold mt-2 ${stats.lowStock > 0 ? 'text-red-500 dark:text-red-400' : 'text-green-500 dark:text-green-400'}`}>
                 {loading ? "..." : stats.lowStock}
             </div>
-            <div className="text-slate-500 text-xs mt-4">
+            <div className="text-[var(--text-muted)] text-xs mt-4">
                 Items with &lt; 10 qty
             </div>
         </div>
 
         {/* Card 3: Categories */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 hover:border-slate-700 transition">
-            <div className="text-slate-400 text-sm font-medium">Active Categories</div>
-            <div className="text-4xl font-bold text-white mt-2">
+        <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-2xl p-4 lg:p-6 hover:border-[var(--border-hover)] transition">
+            <div className="text-[var(--text-secondary)] text-sm font-medium">Active Categories</div>
+            <div className="text-3xl lg:text-4xl font-bold text-[var(--text-primary)] mt-2">
                 {loading ? "..." : stats.categories}
             </div>
-            <Link to="/admin/categories" className="text-blue-400 text-sm mt-4 inline-block hover:underline">
+            <Link to="/admin/categories" className="text-blue-500 dark:text-blue-400 text-sm mt-4 inline-block hover:underline">
                 Manage Categories &rarr;
             </Link>
         </div>
 
         {/* Card 4: Bundles */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 hover:border-slate-700 transition">
-            <div className="text-slate-400 text-sm font-medium">Active Bundles</div>
-            <div className="text-4xl font-bold text-white mt-2">
+        <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-2xl p-4 lg:p-6 hover:border-[var(--border-hover)] transition">
+            <div className="text-[var(--text-secondary)] text-sm font-medium">Active Bundles</div>
+            <div className="text-3xl lg:text-4xl font-bold text-[var(--text-primary)] mt-2">
                 {loading ? "..." : stats.activeBundles}
             </div>
-            <Link to="/admin/bundle-discounts" className="text-blue-400 text-sm mt-4 inline-block hover:underline">
+            <Link to="/admin/bundle-discounts" className="text-blue-500 dark:text-blue-400 text-sm mt-4 inline-block hover:underline">
                 View Promos &rarr;
             </Link>
         </div>
@@ -115,23 +115,23 @@ const Dashboard = () => {
 
       {/* QUICK ACTIONS */}
       <div>
-        <h2 className="text-xl font-bold text-white mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-             <Link to="/admin/products" className="p-4 bg-slate-900 border border-slate-800 hover:bg-slate-800 rounded-xl text-center transition">
-                 <span className="block text-blue-400 font-bold mb-1">+ New Product</span>
-                 <span className="text-xs text-slate-500">Add to inventory</span>
+        <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">Quick Actions</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 lg:gap-4">
+             <Link to="/admin/products" className="p-3 lg:p-4 bg-[var(--bg-card)] border border-[var(--border-primary)] hover:bg-[var(--hover-bg)] rounded-xl text-center transition">
+                 <span className="block text-blue-500 dark:text-blue-400 font-bold mb-1 text-sm lg:text-base">+ New Product</span>
+                 <span className="text-xs text-[var(--text-muted)]">Add to inventory</span>
              </Link>
-             <Link to="/admin/categories" className="p-4 bg-slate-900 border border-slate-800 hover:bg-slate-800 rounded-xl text-center transition">
-                 <span className="block text-purple-400 font-bold mb-1">+ Category</span>
-                 <span className="text-xs text-slate-500">Organize items</span>
+             <Link to="/admin/categories" className="p-3 lg:p-4 bg-[var(--bg-card)] border border-[var(--border-primary)] hover:bg-[var(--hover-bg)] rounded-xl text-center transition">
+                 <span className="block text-purple-500 dark:text-purple-400 font-bold mb-1 text-sm lg:text-base">+ Category</span>
+                 <span className="text-xs text-[var(--text-muted)]">Organize items</span>
              </Link>
-             <Link to="/admin/analytics" className="p-4 bg-slate-900 border border-slate-800 hover:bg-slate-800 rounded-xl text-center transition">
-                 <span className="block text-green-400 font-bold mb-1">Analytics</span>
-                 <span className="text-xs text-slate-500">Check traffic</span>
+             <Link to="/admin/analytics" className="p-3 lg:p-4 bg-[var(--bg-card)] border border-[var(--border-primary)] hover:bg-[var(--hover-bg)] rounded-xl text-center transition">
+                 <span className="block text-green-500 dark:text-green-400 font-bold mb-1 text-sm lg:text-base">Analytics</span>
+                 <span className="text-xs text-[var(--text-muted)]">Check traffic</span>
              </Link>
-             <Link to="/admin/user-roles" className="p-4 bg-slate-900 border border-slate-800 hover:bg-slate-800 rounded-xl text-center transition">
-                 <span className="block text-orange-400 font-bold mb-1">Users</span>
-                 <span className="text-xs text-slate-500">Manage access</span>
+             <Link to="/admin/user-roles" className="p-3 lg:p-4 bg-[var(--bg-card)] border border-[var(--border-primary)] hover:bg-[var(--hover-bg)] rounded-xl text-center transition">
+                 <span className="block text-orange-500 dark:text-orange-400 font-bold mb-1 text-sm lg:text-base">Users</span>
+                 <span className="text-xs text-[var(--text-muted)]">Manage access</span>
              </Link>
         </div>
       </div>

@@ -2,9 +2,102 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
+/* CSS Variables for Light/Dark Theme */
+:root[data-theme="light"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #f1f5f9;
+  --bg-card: #ffffff;
+  --bg-input: #ffffff;
+  --bg-sidebar: #f8fafc;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-tertiary: #64748b;
+  --text-muted: #94a3b8;
+  --border-primary: #e2e8f0;
+  --border-secondary: #cbd5e1;
+  --border-hover: #cbd5e1;
+  --hover-bg: #f1f5f9;
+  --hover-bg-strong: #e2e8f0;
+}
+
+:root[data-theme="dark"] {
+  --bg-primary: #0c111d;
+  --bg-secondary: #0f172a;
+  --bg-tertiary: #1e293b;
+  --bg-card: #1e293b;
+  --bg-input: #0f172a;
+  --bg-sidebar: #1e293b;
+  --text-primary: #f8fafc;
+  --text-secondary: #e2e8f0;
+  --text-tertiary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --border-primary: #334155;
+  --border-secondary: #475569;
+  --border-hover: #475569;
+  --hover-bg: #334155;
+  --hover-bg-strong: #475569;
+}
+
+/* Default to light theme */
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #f1f5f9;
+  --bg-card: #ffffff;
+  --bg-input: #ffffff;
+  --bg-sidebar: #f8fafc;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-tertiary: #64748b;
+  --text-muted: #94a3b8;
+  --border-primary: #e2e8f0;
+  --border-secondary: #cbd5e1;
+  --border-hover: #cbd5e1;
+  --hover-bg: #f1f5f9;
+  --hover-bg-strong: #e2e8f0;
+}
+
+/* Global Styles */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
   margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+body {
   font-family: "Inter", system-ui, -apple-system, sans-serif;
-  background: #0c111d;
-  color: #e5e7eb;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+#root {
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+/* Prevent horizontal scroll */
+.container, .max-w-7xl, .max-w-6xl, .max-w-5xl, .max-w-4xl {
+  max-width: 100%;
+  width: 100%;
+}
+
+/* Responsive table wrapper */
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .table-wrapper {
+    display: block;
+  }
 }

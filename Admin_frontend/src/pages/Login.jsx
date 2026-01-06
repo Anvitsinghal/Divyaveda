@@ -29,25 +29,25 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
-      <div className="bg-slate-900 p-8 rounded-2xl border border-slate-800 shadow-2xl w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-[var(--bg-primary)] px-4">
+      <div className="bg-[var(--bg-card)] p-6 lg:p-8 rounded-2xl border border-[var(--border-primary)] shadow-2xl w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Admin Portal</h1>
-          <p className="text-slate-400">Sign in to manage your inventory</p>
+          <h1 className="text-2xl lg:text-3xl font-bold text-[var(--text-primary)] mb-2">Admin Portal</h1>
+          <p className="text-[var(--text-secondary)]">Sign in to manage your inventory</p>
         </div>
 
         {error && (
-          <div className="bg-red-900/20 border border-red-900/50 text-red-400 p-3 mb-6 rounded-lg text-sm text-center">
+          <div className="bg-red-500/10 dark:bg-red-900/20 border border-red-500/50 dark:border-red-900/50 text-red-600 dark:text-red-400 p-3 mb-6 rounded-lg text-sm text-center">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-slate-300 text-sm font-medium mb-2">Email Address</label>
+            <label className="block text-[var(--text-secondary)] text-sm font-medium mb-2">Email Address</label>
             <input
               type="email"
-              className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition"
+              className="w-full bg-[var(--bg-input)] border border-[var(--border-primary)] rounded-lg p-3 text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition"
               placeholder="admin@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -56,10 +56,10 @@ const Login = () => {
           </div>
 
           <div>
-            <label className="block text-slate-300 text-sm font-medium mb-2">Password</label>
+            <label className="block text-[var(--text-secondary)] text-sm font-medium mb-2">Password</label>
             <input
               type="password"
-              className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition"
+              className="w-full bg-[var(--bg-input)] border border-[var(--border-primary)] rounded-lg p-3 text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -72,7 +72,7 @@ const Login = () => {
             disabled={isLoading}
             className={`w-full py-3 rounded-lg font-bold text-white transition duration-200
               ${isLoading 
-                ? "bg-slate-700 cursor-wait" 
+                ? "bg-gray-400 dark:bg-gray-700 cursor-wait" 
                 : "bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-900/20"
               }`}
           >
@@ -81,7 +81,7 @@ const Login = () => {
         </form>
         
         <div className="mt-6 text-center">
-          <p className="text-xs text-slate-600">
+          <p className="text-xs text-[var(--text-muted)]">
             Secure System • Authorized Access Only
           </p>
         </div>

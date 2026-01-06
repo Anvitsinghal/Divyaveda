@@ -105,68 +105,120 @@ const BundleDiscounts = () => {
     setError("");
   };
 
-  return (
-    <PermissionGate routeName="BUNDLE_DISCOUNT_VIEW">
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-white">Bundle Discounts</h1>
-          <PermissionGate routeName="BUNDLE_DISCOUNT_CREATE">
-            <button 
-              onClick={() => { resetForm(); setIsModalOpen(true); }}
-              className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-medium"
-            >
-              + Create Bundle
-            </button>
-          </PermissionGate>
+ return (
+  <PermissionGate routeName="BUNDLE_DISCOUNT_VIEW">
+    <div className="space-y-6 w-full overflow-x-hidden">
+
+      {/* HEADER */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 className="text-2xl font-bold text-white">
+          Bundle Discounts
+        </h1>
+
+        <PermissionGate routeName="BUNDLE_DISCOUNT_CREATE">
+          <button 
+            onClick={() => { resetForm(); setIsModalOpen(true); }}
+            className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-medium w-fit"
+          >
+            + Create Bundle
+          </button>
+        </PermissionGate>
+      </div>
+
+      {error && (
+        <div className="text-red-400 text-sm bg-red-900/20 p-3 rounded">
+          {error}
         </div>
+      )}
 
-        {error && <div className="text-red-400 text-sm bg-red-900/20 p-3 rounded">{error}</div>}
+      {/* TABLE */}
+      <div className="bg-slate-900 rounded-lg border border-slate-800 shadow-xl overflow-x-auto">
+        <table className="min-w-[1000px] w-full text-left text-sm text-slate-400">
+          <thead className="bg-slate-950 text-slate-200 uppercase font-medium">
+            <tr>
+              <th className="p-4">Name</th>
+              <th className="p-4">Type</th>
+              <th className="p-4">Value</th>
+              <th className="p-4">Min Qty</th>
+              <th className="p-4">Validity</th>
+              <th className="p-4">Status</th>
+              <th className="p-4 text-right">Actions</th>
+            </tr>
+          </thead>
 
-        {/* TABLE LAYOUT */}
-        <div className="bg-slate-900 rounded-lg border border-slate-800 overflow-hidden">
-          <table className="w-full text-left text-sm text-slate-400">
-            <thead className="bg-slate-950 text-slate-200 uppercase font-medium">
+          <tbody>
+            {loading ? (
               <tr>
-                <th className="p-4">Name</th>
-                <th className="p-4">Type</th>
-                <th className="p-4">Value</th>
-                <th className="p-4">Min Qty</th>
-                <th className="p-4">Validity</th>
-                <th className="p-4">Status</th>
-                <th className="p-4 text-right">Actions</th>
+                <td colSpan="7" className="p-6 text-center text-slate-500">
+                  Loading...
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {loading ? <tr><td className="p-4">Loading...</td></tr> : items.map((d) => (
-                <tr key={d._id} className="border-t border-slate-800 hover:bg-slate-800/50">
-                  <td className="p-4 font-medium text-white">{d.name}</td>
+            ) : items.length === 0 ? (
+              <tr>
+                <td colSpan="7" className="p-6 text-center text-slate-500">
+                  No bundles found.
+                </td>
+              </tr>
+            ) : (
+              items.map(d => (
+                <tr
+                  key={d._id}
+                  className="border-t border-slate-800 hover:bg-slate-800/50 transition"
+                >
+                  <td className="p-4 font-medium text-white whitespace-nowrap">
+                    {d.name}
+                  </td>
+
                   <td className="p-4">
-                    <span className="bg-slate-800 px-2 py-1 rounded text-xs">{d.discount_type}</span>
+                    <span className="inline-block bg-slate-800 px-2 py-1 rounded text-xs whitespace-nowrap">
+                      {d.discount_type}
+                    </span>
                   </td>
-                  <td className="p-4 text-green-400 font-bold">
-                    {d.discount_type === 'PERCENTAGE' ? `${d.discount_value}%` : `$${d.discount_value}`}
+
+                  <td className="p-4 text-green-400 font-bold whitespace-nowrap">
+                    {d.discount_type === "PERCENTAGE"
+                      ? `${d.discount_value}%`
+                      : `$${d.discount_value}`}
                   </td>
-                  <td className="p-4">{d.min_products}</td>
-                  <td className="p-4 text-xs">
-                    {d.valid_from ? new Date(d.valid_from).toLocaleDateString() : 'Any'} - <br/>
-                    {d.valid_to ? new Date(d.valid_to).toLocaleDateString() : 'Any'}
+
+                  <td className="p-4 whitespace-nowrap">
+                    {d.min_products}
                   </td>
+
+                  <td className="p-4 text-xs whitespace-nowrap">
+                    {d.valid_from
+                      ? new Date(d.valid_from).toLocaleDateString()
+                      : "Any"}
+                    {" "}–{" "}
+                    {d.valid_to
+                      ? new Date(d.valid_to).toLocaleDateString()
+                      : "Any"}
+                  </td>
+
                   <td className="p-4">
-                     <span className={`px-2 py-1 rounded text-xs ${d.isActive ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'}`}>
-                        {d.isActive ? "Active" : "Inactive"}
-                     </span>
+                    <span
+                      className={`inline-block px-2 py-1 rounded text-xs ${
+                        d.isActive
+                          ? "bg-green-900 text-green-300"
+                          : "bg-red-900 text-red-300"
+                      }`}
+                    >
+                      {d.isActive ? "Active" : "Inactive"}
+                    </span>
                   </td>
-                  <td className="p-4 text-right space-x-3">
+
+                  <td className="p-4 text-right whitespace-nowrap space-x-3">
                     <PermissionGate routeName="BUNDLE_DISCOUNT_UPDATE">
-                      <button 
+                      <button
                         onClick={() => openEditModal(d)}
                         className="text-blue-400 hover:text-blue-300"
                       >
                         Edit
                       </button>
                     </PermissionGate>
+
                     <PermissionGate routeName="BUNDLE_DISCOUNT_DELETE">
-                      <button 
+                      <button
                         onClick={() => handleDelete(d._id)}
                         className="text-red-400 hover:text-red-300"
                       >
@@ -175,118 +227,171 @@ const BundleDiscounts = () => {
                     </PermissionGate>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
 
-        {/* MODAL */}
-        {isModalOpen && (
-          <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
-            <div className="bg-slate-900 border border-slate-800 rounded-lg w-full max-w-lg p-6 shadow-xl max-h-[90vh] overflow-y-auto">
-              <h2 className="text-xl font-bold text-white mb-4">
-                {editingId ? "Edit Bundle" : "New Bundle"}
-              </h2>
-              
-              <form onSubmit={handleSubmit} className="space-y-4">
+      {/* MODAL */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-lg w-full max-w-lg p-5 sm:p-6 shadow-xl max-h-[90vh] overflow-y-auto">
+
+            <h2 className="text-xl font-bold text-white mb-4">
+              {editingId ? "Edit Bundle" : "New Bundle"}
+            </h2>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+
+              <div>
+                <label className="block text-sm text-slate-400 mb-1">
+                  Bundle Name
+                </label>
+                <input
+                  className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white"
+                  value={formData.name}
+                  onChange={e =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">Bundle Name</label>
-                  <input
+                  <label className="block text-sm text-slate-400 mb-1">
+                    Type
+                  </label>
+                  <select
                     className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white"
-                    value={formData.name}
-                    onChange={e => setFormData({ ...formData, name: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm text-slate-400 mb-1">Type</label>
-                    <select
-                      className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white"
-                      value={formData.discount_type}
-                      onChange={e => setFormData({ ...formData, discount_type: e.target.value })}
-                    >
-                      <option value="PERCENTAGE">Percentage (%)</option>
-                      <option value="FLAT">Flat Amount ($)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm text-slate-400 mb-1">Value</label>
-                    <input
-                      type="number"
-                      className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white"
-                      value={formData.discount_value}
-                      onChange={e => setFormData({ ...formData, discount_value: e.target.value })}
-                      required
-                    />
-                  </div>
+                    value={formData.discount_type}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        discount_type: e.target.value
+                      })
+                    }
+                  >
+                    <option value="PERCENTAGE">Percentage (%)</option>
+                    <option value="FLAT">Flat Amount ($)</option>
+                  </select>
                 </div>
 
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">Min Products required in cart</label>
+                  <label className="block text-sm text-slate-400 mb-1">
+                    Value
+                  </label>
                   <input
                     type="number"
                     className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white"
-                    value={formData.min_products}
-                    onChange={e => setFormData({ ...formData, min_products: e.target.value })}
+                    value={formData.discount_value}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        discount_value: e.target.value
+                      })
+                    }
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm text-slate-400 mb-1">
+                  Min Products Required
+                </label>
+                <input
+                  type="number"
+                  className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white"
+                  value={formData.min_products}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      min_products: e.target.value
+                    })
+                  }
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-slate-400 mb-1">
+                    Valid From
+                  </label>
+                  <input
+                    type="date"
+                    className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white"
+                    value={formData.valid_from}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        valid_from: e.target.value
+                      })
+                    }
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm text-slate-400 mb-1">Valid From</label>
-                    <input
-                      type="date"
-                      className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white"
-                      value={formData.valid_from}
-                      onChange={e => setFormData({ ...formData, valid_from: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-slate-400 mb-1">Valid To</label>
-                    <input
-                      type="date"
-                      className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white"
-                      value={formData.valid_to}
-                      onChange={e => setFormData({ ...formData, valid_to: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 pt-2">
-                  <input 
-                    type="checkbox"
-                    id="isActive"
-                    checked={formData.isActive}
-                    onChange={e => setFormData({...formData, isActive: e.target.checked})}
-                    className="w-4 h-4 rounded bg-slate-950 border-slate-700"
+                <div>
+                  <label className="block text-sm text-slate-400 mb-1">
+                    Valid To
+                  </label>
+                  <input
+                    type="date"
+                    className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white"
+                    value={formData.valid_to}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        valid_to: e.target.value
+                      })
+                    }
                   />
-                  <label htmlFor="isActive" className="text-slate-300 text-sm">Active</label>
                 </div>
+              </div>
 
-                <div className="flex gap-3 mt-6 pt-4 border-t border-slate-800">
-                  <button 
-                    type="button" 
-                    onClick={() => setIsModalOpen(false)}
-                    className="flex-1 py-2 rounded hover:bg-slate-800 text-slate-300"
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    type="submit" 
-                    className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2 rounded font-medium"
-                  >
-                    {editingId ? "Update Bundle" : "Create Bundle"}
-                  </button>
-                </div>
-              </form>
-            </div>
+              <div className="flex items-center gap-2 pt-2">
+                <input
+                  type="checkbox"
+                  checked={formData.isActive}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      isActive: e.target.checked
+                    })
+                  }
+                  className="w-4 h-4 rounded bg-slate-950 border-slate-700"
+                />
+                <span className="text-slate-300 text-sm">
+                  Active
+                </span>
+              </div>
+
+              <div className="flex gap-3 mt-6 pt-4 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="flex-1 py-2 rounded bg-slate-800 text-slate-300 hover:bg-slate-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2 rounded font-medium"
+                >
+                  {editingId ? "Update Bundle" : "Create Bundle"}
+                </button>
+              </div>
+
+            </form>
           </div>
-        )}
-      </div>
-    </PermissionGate>
-  );
+        </div>
+      )}
+    </div>
+  </PermissionGate>
+);
+
 };
 
 export default BundleDiscounts;
+
