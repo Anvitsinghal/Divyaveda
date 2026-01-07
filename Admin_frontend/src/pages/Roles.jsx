@@ -14,7 +14,8 @@ const MODULES = [
   "ROLE",
   "USER",
   "USER_ROLE",
-  "LEAD"
+  "LEAD",
+  "B2B"
 ];
 
 const ACTIONS = ["VIEW", "CREATE", "UPDATE", "DELETE"];

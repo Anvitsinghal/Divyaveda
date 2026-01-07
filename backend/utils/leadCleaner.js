@@ -1,41 +1,30 @@
 export const cleanLeadRow = (row) => {
-  const headers = row._worksheet._headerValues;
-  const data = row._rawData;
+  const phoneRaw = row["phone"] || row.phone;
+  if (!phoneRaw) return null;
 
-  if (!data || data.length === 0) return null;
-
-  const get = (name) => {
-    const idx = headers.indexOf(name);
-    return idx !== -1 ? data[idx] : "";
-  };
-
-  // PHONE (MANDATORY)
-  const phone = String(get("phone"))
-    .replace("p:+91", "")
-    .replace("p:", "")
-    .trim();
-
-  if (!phone) return null;
+  const phone = String(phoneRaw).replace(/\D/g, "").slice(-10);
+  if (phone.length !== 10) return null;
 
   return {
-    created_date: get("created_time")
-      ? String(get("created_time")).split("T")[0]
-      : "",
+    created_date: row["created_time"]
+      ? row["created_time"].split("T")[0]
+      : new Date().toISOString().split("T")[0],
 
-    full_name: get("full name") || "Unknown",
+    full_name: row["full name"] || "Unknown",
+    email: row["email"] || null,
     phone,
-    email: get("email") || null,
 
-    platform: get("platform") || "other",
-    ad_name: get("ad_name") || null,
-    campaign_name: get("campaign_name") || null,
+    platform: row["platform"] || "other",
+    ad_name: row["ad_name"] || null,
+    campaign_name: row["campaign_name"] || null,
 
-    business_type: get("what_type_of_business_do_you_run?") || null,
-    role: get("what_is_your_role_within_the_company?") || null,
+    business_type: row["what_type_of_business_do_you_run?"] || null,
+    role: row["what_is_your_role_within_the_company?"] || null,
 
-    lead_status: get("lead_status") || "NEW",
+    lead_status: row["lead_status"] || "CREATED",
     source: "DAILY_LEAD",
+    isActive: true,
 
-    meta_data: Object.fromEntries(headers.map((h, i) => [h, data[i]]))
+    meta_data: row._rawData
   };
 };

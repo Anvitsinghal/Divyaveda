@@ -8,23 +8,20 @@ const BundleDiscounts = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [error, setError] = useState("");
 
-  // Edit State
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
-    discount_type: "PERCENTAGE", // Default to valid enum
+    discount_type: "PERCENTAGE",
     discount_value: "",
-    min_products: 1, // Matches model field 'min_products'
+    min_products: 1,
     valid_from: "",
     valid_to: "",
     isActive: true
   });
 
-  // 1. Fetch Data
   const load = async () => {
     try {
       const res = await api.get("/admin/bundle-discounts");
-      // Safe extract
       setItems(res.data.bundleDiscounts || res.data || []);
       setError("");
     } catch (e) {
@@ -38,7 +35,6 @@ const BundleDiscounts = () => {
     load();
   }, []);
 
-  // 2. Handle Submit (Create / Update)
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -51,10 +47,8 @@ const BundleDiscounts = () => {
 
       if (editingId) {
         await api.put(`/admin/bundle-discounts/${editingId}`, payload);
-        alert("Discount Updated!");
       } else {
         await api.post("/admin/bundle-discounts", payload);
-        alert("Discount Created!");
       }
 
       setIsModalOpen(false);
@@ -65,18 +59,12 @@ const BundleDiscounts = () => {
     }
   };
 
-  // 3. Handle Delete
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this discount bundle?")) return;
-    try {
-      await api.delete(`/admin/bundle-discounts/${id}`);
-      load();
-    } catch (e) {
-      alert("Failed to delete");
-    }
+    await api.delete(`/admin/bundle-discounts/${id}`);
+    load();
   };
 
-  // Helper: Open Modal
   const openEditModal = (item) => {
     setEditingId(item._id);
     setFormData({
@@ -84,8 +72,8 @@ const BundleDiscounts = () => {
       discount_type: item.discount_type,
       discount_value: item.discount_value,
       min_products: item.min_products || 1,
-      valid_from: item.valid_from ? item.valid_from.split('T')[0] : "",
-      valid_to: item.valid_to ? item.valid_to.split('T')[0] : "",
+      valid_from: item.valid_from ? item.valid_from.split("T")[0] : "",
+      valid_to: item.valid_to ? item.valid_to.split("T")[0] : "",
       isActive: item.isActive
     });
     setIsModalOpen(true);
@@ -105,293 +93,238 @@ const BundleDiscounts = () => {
     setError("");
   };
 
- return (
-  <PermissionGate routeName="BUNDLE_DISCOUNT_VIEW">
-    <div className="space-y-6 w-full overflow-x-hidden">
+  return (
+    <PermissionGate routeName="BUNDLE_DISCOUNT_VIEW">
+      <div className="space-y-6 w-full">
 
-      {/* HEADER */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-bold text-white">
-          Bundle Discounts
-        </h1>
+        {/* HEADER */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <h1 className="text-2xl font-bold">Bundle Discounts</h1>
 
-        <PermissionGate routeName="BUNDLE_DISCOUNT_CREATE">
-          <button 
-            onClick={() => { resetForm(); setIsModalOpen(true); }}
-            className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-medium w-fit"
-          >
-            + Create Bundle
-          </button>
-        </PermissionGate>
-      </div>
-
-      {error && (
-        <div className="text-red-400 text-sm bg-red-900/20 p-3 rounded">
-          {error}
+          <PermissionGate routeName="BUNDLE_DISCOUNT_CREATE">
+            <button
+              onClick={() => { resetForm(); setIsModalOpen(true); }}
+              className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium w-fit"
+            >
+              + Create Bundle
+            </button>
+          </PermissionGate>
         </div>
-      )}
 
-      {/* TABLE */}
-      <div className="bg-slate-900 rounded-lg border border-slate-800 shadow-xl overflow-x-auto">
-        <table className="min-w-[1000px] w-full text-left text-sm text-slate-400">
-          <thead className="bg-slate-950 text-slate-200 uppercase font-medium">
-            <tr>
-              <th className="p-4">Name</th>
-              <th className="p-4">Type</th>
-              <th className="p-4">Value</th>
-              <th className="p-4">Min Qty</th>
-              <th className="p-4">Validity</th>
-              <th className="p-4">Status</th>
-              <th className="p-4 text-right">Actions</th>
-            </tr>
-          </thead>
+        {error && (
+          <div className="text-red-500 text-sm bg-red-500/10 p-3 rounded-lg">
+            {error}
+          </div>
+        )}
 
-          <tbody>
-            {loading ? (
+        {/* TABLE */}
+        <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl overflow-x-auto">
+          <table className="min-w-[1000px] w-full text-sm">
+            <thead className="bg-[var(--bg-muted)] text-left">
               <tr>
-                <td colSpan="7" className="p-6 text-center text-slate-500">
-                  Loading...
-                </td>
+                <th className="p-4">Name</th>
+                <th className="p-4">Type</th>
+                <th className="p-4">Value</th>
+                <th className="p-4">Min Qty</th>
+                <th className="p-4">Validity</th>
+                <th className="p-4">Status</th>
+                <th className="p-4 text-right">Actions</th>
               </tr>
-            ) : items.length === 0 ? (
-              <tr>
-                <td colSpan="7" className="p-6 text-center text-slate-500">
-                  No bundles found.
-                </td>
-              </tr>
-            ) : (
-              items.map(d => (
-                <tr
-                  key={d._id}
-                  className="border-t border-slate-800 hover:bg-slate-800/50 transition"
-                >
-                  <td className="p-4 font-medium text-white whitespace-nowrap">
-                    {d.name}
-                  </td>
+            </thead>
 
-                  <td className="p-4">
-                    <span className="inline-block bg-slate-800 px-2 py-1 rounded text-xs whitespace-nowrap">
-                      {d.discount_type}
-                    </span>
-                  </td>
-
-                  <td className="p-4 text-green-400 font-bold whitespace-nowrap">
-                    {d.discount_type === "PERCENTAGE"
-                      ? `${d.discount_value}%`
-                      : `$${d.discount_value}`}
-                  </td>
-
-                  <td className="p-4 whitespace-nowrap">
-                    {d.min_products}
-                  </td>
-
-                  <td className="p-4 text-xs whitespace-nowrap">
-                    {d.valid_from
-                      ? new Date(d.valid_from).toLocaleDateString()
-                      : "Any"}
-                    {" "}–{" "}
-                    {d.valid_to
-                      ? new Date(d.valid_to).toLocaleDateString()
-                      : "Any"}
-                  </td>
-
-                  <td className="p-4">
-                    <span
-                      className={`inline-block px-2 py-1 rounded text-xs ${
-                        d.isActive
-                          ? "bg-green-900 text-green-300"
-                          : "bg-red-900 text-red-300"
-                      }`}
-                    >
-                      {d.isActive ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-
-                  <td className="p-4 text-right whitespace-nowrap space-x-3">
-                    <PermissionGate routeName="BUNDLE_DISCOUNT_UPDATE">
-                      <button
-                        onClick={() => openEditModal(d)}
-                        className="text-blue-400 hover:text-blue-300"
-                      >
-                        Edit
-                      </button>
-                    </PermissionGate>
-
-                    <PermissionGate routeName="BUNDLE_DISCOUNT_DELETE">
-                      <button
-                        onClick={() => handleDelete(d._id)}
-                        className="text-red-400 hover:text-red-300"
-                      >
-                        Delete
-                      </button>
-                    </PermissionGate>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan="7" className="p-6 text-center text-[var(--text-muted)]">
+                    Loading…
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              ) : items.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="p-6 text-center text-[var(--text-muted)]">
+                    No bundles found
+                  </td>
+                </tr>
+              ) : (
+                items.map(d => (
+                  <tr
+                    key={d._id}
+                    className="border-t border-[var(--border-primary)] hover:bg-[var(--hover-bg)] transition"
+                  >
+                    <td className="p-4 font-medium whitespace-nowrap">
+                      {d.name}
+                    </td>
 
-      {/* MODAL */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-lg w-full max-w-lg p-5 sm:p-6 shadow-xl max-h-[90vh] overflow-y-auto">
+                    <td className="p-4">
+                      <span className="inline-block px-2 py-1 rounded text-xs bg-[var(--hover-bg)]">
+                        {d.discount_type}
+                      </span>
+                    </td>
 
-            <h2 className="text-xl font-bold text-white mb-4">
-              {editingId ? "Edit Bundle" : "New Bundle"}
-            </h2>
+                    <td className="p-4 font-semibold text-green-600 whitespace-nowrap">
+                      {d.discount_type === "PERCENTAGE"
+                        ? `${d.discount_value}%`
+                        : `$${d.discount_value}`}
+                    </td>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+                    <td className="p-4 whitespace-nowrap">
+                      {d.min_products}
+                    </td>
 
-              <div>
-                <label className="block text-sm text-slate-400 mb-1">
-                  Bundle Name
-                </label>
+                    <td className="p-4 text-xs whitespace-nowrap">
+                      {d.valid_from
+                        ? new Date(d.valid_from).toLocaleDateString()
+                        : "Any"}
+                      {" "}–{" "}
+                      {d.valid_to
+                        ? new Date(d.valid_to).toLocaleDateString()
+                        : "Any"}
+                    </td>
+
+                    <td className="p-4">
+                      <span
+                        className={`inline-block px-2 py-0.5 rounded-full text-xs ${
+                          d.isActive
+                            ? "bg-green-500/15 text-green-600"
+                            : "bg-red-500/15 text-red-600"
+                        }`}
+                      >
+                        {d.isActive ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+
+                    <td className="p-4 text-right space-x-3 whitespace-nowrap">
+                      <PermissionGate routeName="BUNDLE_DISCOUNT_UPDATE">
+                        <button
+                          onClick={() => openEditModal(d)}
+                          className="text-blue-600 hover:underline"
+                        >
+                          Edit
+                        </button>
+                      </PermissionGate>
+
+                      <PermissionGate routeName="BUNDLE_DISCOUNT_DELETE">
+                        <button
+                          onClick={() => handleDelete(d._id)}
+                          className="text-red-500 hover:underline"
+                        >
+                          Delete
+                        </button>
+                      </PermissionGate>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* MODAL */}
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur flex items-center justify-center p-4">
+            <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+              <h2 className="text-xl font-bold mb-4">
+                {editingId ? "Edit Bundle" : "New Bundle"}
+              </h2>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <input
-                  className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white"
+                  className="w-full border border-[var(--border-primary)] rounded-lg px-3 py-2 bg-transparent"
+                  placeholder="Bundle name"
                   value={formData.name}
                   onChange={e =>
                     setFormData({ ...formData, name: e.target.value })
                   }
                   required
                 />
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-slate-400 mb-1">
-                    Type
-                  </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <select
-                    className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white"
+                    className="w-full border border-[var(--border-primary)] rounded-lg px-3 py-2 bg-transparent"
                     value={formData.discount_type}
                     onChange={e =>
-                      setFormData({
-                        ...formData,
-                        discount_type: e.target.value
-                      })
+                      setFormData({ ...formData, discount_type: e.target.value })
                     }
                   >
                     <option value="PERCENTAGE">Percentage (%)</option>
-                    <option value="FLAT">Flat Amount ($)</option>
+                    <option value="FLAT">Flat Amount</option>
                   </select>
-                </div>
 
-                <div>
-                  <label className="block text-sm text-slate-400 mb-1">
-                    Value
-                  </label>
                   <input
                     type="number"
-                    className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white"
+                    className="w-full border border-[var(--border-primary)] rounded-lg px-3 py-2 bg-transparent"
+                    placeholder="Discount value"
                     value={formData.discount_value}
                     onChange={e =>
-                      setFormData({
-                        ...formData,
-                        discount_value: e.target.value
-                      })
+                      setFormData({ ...formData, discount_value: e.target.value })
                     }
                     required
                   />
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-sm text-slate-400 mb-1">
-                  Min Products Required
-                </label>
                 <input
                   type="number"
-                  className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white"
+                  className="w-full border border-[var(--border-primary)] rounded-lg px-3 py-2 bg-transparent"
+                  placeholder="Minimum products"
                   value={formData.min_products}
                   onChange={e =>
-                    setFormData({
-                      ...formData,
-                      min_products: e.target.value
-                    })
+                    setFormData({ ...formData, min_products: e.target.value })
                   }
                 />
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-slate-400 mb-1">
-                    Valid From
-                  </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <input
                     type="date"
-                    className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white"
+                    className="w-full border border-[var(--border-primary)] rounded-lg px-3 py-2 bg-transparent"
                     value={formData.valid_from}
                     onChange={e =>
-                      setFormData({
-                        ...formData,
-                        valid_from: e.target.value
-                      })
+                      setFormData({ ...formData, valid_from: e.target.value })
                     }
                   />
-                </div>
-
-                <div>
-                  <label className="block text-sm text-slate-400 mb-1">
-                    Valid To
-                  </label>
                   <input
                     type="date"
-                    className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white"
+                    className="w-full border border-[var(--border-primary)] rounded-lg px-3 py-2 bg-transparent"
                     value={formData.valid_to}
                     onChange={e =>
-                      setFormData({
-                        ...formData,
-                        valid_to: e.target.value
-                      })
+                      setFormData({ ...formData, valid_to: e.target.value })
                     }
                   />
                 </div>
-              </div>
 
-              <div className="flex items-center gap-2 pt-2">
-                <input
-                  type="checkbox"
-                  checked={formData.isActive}
-                  onChange={e =>
-                    setFormData({
-                      ...formData,
-                      isActive: e.target.checked
-                    })
-                  }
-                  className="w-4 h-4 rounded bg-slate-950 border-slate-700"
-                />
-                <span className="text-slate-300 text-sm">
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={formData.isActive}
+                    onChange={e =>
+                      setFormData({ ...formData, isActive: e.target.checked })
+                    }
+                  />
                   Active
-                </span>
-              </div>
+                </label>
 
-              <div className="flex gap-3 mt-6 pt-4 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="flex-1 py-2 rounded bg-slate-800 text-slate-300 hover:bg-slate-700"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2 rounded font-medium"
-                >
-                  {editingId ? "Update Bundle" : "Create Bundle"}
-                </button>
-              </div>
-
-            </form>
+                <div className="flex gap-3 pt-4 border-t border-[var(--border-primary)]">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="flex-1 py-2 rounded-lg border border-[var(--border-primary)]"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-2 rounded-lg bg-blue-600 text-white"
+                  >
+                    {editingId ? "Update Bundle" : "Create Bundle"}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
-  </PermissionGate>
-);
+        )}
 
+      </div>
+    </PermissionGate>
+  );
 };
 
 export default BundleDiscounts;
-

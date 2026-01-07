@@ -20,21 +20,27 @@ import roleRoutes from "./routes/admin/role.routes.js";
 import screenRoutes from "./routes/admin/screen.routes.js";
 import userRoleMapRoutes from "./routes/admin/userRoleMap.routes.js";
 import analyticsRoutes from "./routes/admin/analytics.routes.js";
+import b2bRoutes from "./routes/admin/b2b.routes.js";
 
 import leadRoutes from "./routes/admin/lead.routes.js"; // <--- Import
+console.log("🔥 BACKEND BOOTED AT", new Date().toISOString());
 
 dotenv.config();//for loading env variables
 const app = express();//making instance of express
  //middlewares that run in between response and request
-app.use(cors({
-  origin: [
-    "http://localhost:5173",                   // Localhost
-    "https://divyaveda-admin.onrender.com",    // (Optional) Old Render link if you still use it
-    "https://divyaveda.in",                    // <--- NEW: Your Custom Domain
-    "https://www.divyaveda.in"                 // <--- NEW: The 'www' version (Safe to add)
-  ],
-  credentials: true 
-}));//for accepting frontend requests
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://divyaveda.in",
+      "https://www.divyaveda.in"
+    ],
+    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+  })
+);
+
 app.use(express.json({ limit: "10mb" }));//data uploading limit
 app.use(express.urlencoded({ extended: true }));//to parse the url
 
@@ -63,6 +69,7 @@ app.use("/api/admin/roles", roleRoutes);
 app.use("/api/admin/screens", screenRoutes);
 app.use("/api/admin/user-roles", userRoleMapRoutes);
 app.use("/api/admin/analytics", analyticsRoutes);
+app.use("/api/admin/b2b", b2bRoutes);
 
 // ... existing routes ...
 app.use("/api/admin/leads", leadRoutes); // <--- Add this

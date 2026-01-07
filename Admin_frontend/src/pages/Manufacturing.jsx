@@ -12,11 +12,10 @@ const Manufacturing = () => {
   const [form, setForm] = useState({
     product_id: "",
     material_id: "",
-    quantity_used: "",     // FIXED: Matches Mongoose model
-    manufactured_qty: ""   // FIXED: Matches Mongoose model
+    quantity_used: "",
+    manufactured_qty: ""
   });
 
-  // Safe Data Extraction
   const safeExtract = (res, key) => res.data[key] || res.data || [];
 
   const load = async () => {
@@ -27,11 +26,11 @@ const Manufacturing = () => {
         api.get("/admin/raw-materials")
       ]);
 
-      setLogs(safeExtract(logRes, "logs")); // Adjust based on backend response structure
+      setLogs(safeExtract(logRes, "logs"));
       setProducts(safeExtract(prodRes, "products"));
       setMaterials(safeExtract(matRes, "rawMaterials"));
       setError("");
-    } catch (e) {
+    } catch {
       setError("Unable to load manufacturing data");
     } finally {
       setLoading(false);
@@ -51,15 +50,14 @@ const Manufacturing = () => {
         quantity_used: Number(form.quantity_used),
         manufactured_qty: Number(form.manufactured_qty)
       });
-      
-      // Reset Form
+
       setForm({
         product_id: "",
         material_id: "",
         quantity_used: "",
         manufactured_qty: ""
       });
-      alert("Production Logged Successfully!");
+
       await load();
     } catch (e) {
       setError(e.response?.data?.message || "Failed to log production");
@@ -67,53 +65,72 @@ const Manufacturing = () => {
   };
 
   const handleDelete = async (id) => {
-    if(!window.confirm("Delete this log? This should reverse stock changes.")) return;
-    try {
-      await api.delete(`/admin/manufacturing/${id}`);
-      load();
-    } catch (e) {
-      alert("Failed to delete log");
-    }
+    if (!window.confirm("Delete this log?")) return;
+    await api.delete(`/admin/manufacturing/${id}`);
+    load();
   };
 
-  if (loading) return <div className="p-6 text-slate-400">Loading Manufacturing Data...</div>;
+  if (loading) {
+    return <div className="p-6 text-[var(--text-muted)]">Loading manufacturing data…</div>;
+  }
 
   return (
     <PermissionGate routeName="MANUFACTURING_VIEW">
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-white">Manufacturing Logs</h1>
-          <div className="text-sm text-slate-400">Total Records: {logs.length}</div>
+
+        {/* HEADER */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <h1 className="text-2xl font-bold">
+            Manufacturing Logs
+          </h1>
+          <div className="text-sm text-[var(--text-muted)]">
+            Total Records: {logs.length}
+          </div>
         </div>
-        
-        {error && <div className="text-red-400 bg-red-900/20 p-3 rounded border border-red-900/50">{error}</div>}
-        
-        <div className="grid md:grid-cols-2 gap-6">
-          
-          {/* LEFT: LOG LIST */}
-          <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
-            {logs.length === 0 && <div className="text-slate-500 text-center py-4">No production logs found.</div>}
+
+        {error && (
+          <div className="text-red-500 bg-red-500/10 p-3 rounded-lg">
+            {error}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+          {/* LEFT: LOGS */}
+          <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
+            {logs.length === 0 && (
+              <div className="text-[var(--text-muted)] text-center py-6">
+                No production logs found.
+              </div>
+            )}
+
             {logs.map((log) => (
-              <div key={log._id} className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex justify-between items-start">
-                <div>
-                  <div className="text-white font-semibold text-lg">
+              <div
+                key={log._id}
+                className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-4 flex justify-between gap-4"
+              >
+                <div className="min-w-0">
+                  <div className="font-semibold text-lg truncate">
                     {log.product_id?.name || "Unknown Product"}
                   </div>
-                  <div className="text-green-400 font-mono text-sm">
-                    Produced: +{log.manufactured_qty} units
+
+                  <div className="text-green-600 font-mono text-sm">
+                    Produced: +{log.manufactured_qty}
                   </div>
-                  <div className="text-slate-400 text-sm mt-1">
-                    Used: {log.quantity_used} units of {log.material_id?.name || "Material"}
+
+                  <div className="text-sm text-[var(--text-muted)] mt-1">
+                    Used {log.quantity_used} of {log.material_id?.name || "Material"}
                   </div>
-                  <div className="text-xs text-slate-600 mt-2">
+
+                  <div className="text-xs text-[var(--text-muted)] mt-2">
                     {new Date(log.created_at || log.createdAt).toLocaleString()}
                   </div>
                 </div>
-                
+
                 <PermissionGate routeName="MANUFACTURING_DELETE">
-                  <button 
+                  <button
                     onClick={() => handleDelete(log._id)}
-                    className="text-red-500 hover:text-red-400 text-sm px-2 py-1 rounded hover:bg-red-900/20 transition"
+                    className="text-red-500 text-sm px-2 py-1 rounded hover:bg-red-500/10 h-fit"
                   >
                     Revert
                   </button>
@@ -122,40 +139,45 @@ const Manufacturing = () => {
             ))}
           </div>
 
-          {/* RIGHT: CREATE FORM */}
+          {/* RIGHT: FORM */}
           <PermissionGate routeName="MANUFACTURING_CREATE">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 h-fit">
-              <h2 className="text-xl font-bold text-white mb-4">Log New Batch</h2>
+            <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-6 h-fit">
+              <h2 className="text-xl font-bold mb-4">
+                Log New Batch
+              </h2>
+
               <form onSubmit={handleSubmit} className="space-y-4">
-                
-                {/* Product Select */}
+
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">Finished Product</label>
+                  <label className="block text-sm text-[var(--text-muted)] mb-1">
+                    Finished Product
+                  </label>
                   <select
-                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-600 outline-none"
+                    className="w-full border border-[var(--border-primary)] rounded-lg px-3 py-2 bg-transparent"
                     value={form.product_id}
                     onChange={(e) => setForm({ ...form, product_id: e.target.value })}
                     required
                   >
-                    <option value="">Select Product...</option>
+                    <option value="">Select product</option>
                     {products.map((p) => (
                       <option key={p._id} value={p._id}>
-                        {p.name} (Current Stock: {p.stock_quantity})
+                        {p.name} (Stock: {p.stock_quantity})
                       </option>
                     ))}
                   </select>
                 </div>
 
-                {/* Material Select */}
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">Raw Material Used</label>
+                  <label className="block text-sm text-[var(--text-muted)] mb-1">
+                    Raw Material Used
+                  </label>
                   <select
-                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-600 outline-none"
+                    className="w-full border border-[var(--border-primary)] rounded-lg px-3 py-2 bg-transparent"
                     value={form.material_id}
                     onChange={(e) => setForm({ ...form, material_id: e.target.value })}
                     required
                   >
-                    <option value="">Select Material...</option>
+                    <option value="">Select material</option>
                     {materials.map((m) => (
                       <option key={m._id} value={m._id}>
                         {m.name} (Available: {m.current_quantity} {m.unit})
@@ -164,42 +186,37 @@ const Manufacturing = () => {
                   </select>
                 </div>
 
-                {/* Quantities */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm text-slate-400 mb-1">Material Consumed</label>
-                    <input
-                      type="number"
-                      min="0"
-                      className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white"
-                      placeholder="Qty Used"
-                      value={form.quantity_used}
-                      onChange={(e) => setForm({ ...form, quantity_used: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-slate-400 mb-1">Produced Count</label>
-                    <input
-                      type="number"
-                      min="1"
-                      className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white"
-                      placeholder="Qty Made"
-                      value={form.manufactured_qty}
-                      onChange={(e) => setForm({ ...form, manufactured_qty: e.target.value })}
-                      required
-                    />
-                  </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="Material consumed"
+                    className="border border-[var(--border-primary)] rounded-lg px-3 py-2 bg-transparent"
+                    value={form.quantity_used}
+                    onChange={(e) => setForm({ ...form, quantity_used: e.target.value })}
+                    required
+                  />
+
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="Produced count"
+                    className="border border-[var(--border-primary)] rounded-lg px-3 py-2 bg-transparent"
+                    value={form.manufactured_qty}
+                    onChange={(e) => setForm({ ...form, manufactured_qty: e.target.value })}
+                    required
+                  />
                 </div>
 
-                <button 
-                  type="submit" 
-                  className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-500 font-bold shadow-lg shadow-blue-900/20 transition mt-4"
+                <button
+                  type="submit"
+                  className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-semibold transition"
                 >
-                  Record Production Log
+                  Record Production
                 </button>
-                <p className="text-xs text-slate-500 text-center mt-2">
-                  *This will automatically update stock levels.
+
+                <p className="text-xs text-[var(--text-muted)] text-center">
+                  * Stock levels update automatically
                 </p>
               </form>
             </div>
@@ -212,4 +229,3 @@ const Manufacturing = () => {
 };
 
 export default Manufacturing;
-

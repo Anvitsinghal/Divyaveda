@@ -14,6 +14,7 @@ import { checkPermission } from "../../middleware/checkPermission.js";
 import { syncGoogleSheetLeads } from "../../controllers/admin/lead.controller.js";
 
 
+console.log("🔥 lead.routes.js LOADED");
 
 
 const router = express.Router();
@@ -43,7 +44,17 @@ router.post("/", isAuthenticated, loadUserRoles, checkPermission("LEAD_CREATE"),
 router.put("/:id", isAuthenticated, loadUserRoles, checkPermission("LEAD_UPDATE"), updateLead);
 router.post(
   "/sync-sheet",
-  isAuthenticated,loadUserRoles,
+  (req, res, next) => {
+    console.log("🔥 /sync-sheet ROUTE HIT");
+    next();
+  },
+  isAuthenticated,
+  loadUserRoles,
+  (req, res, next) => {
+    console.log("🔥 middlewares passed");
+    next();
+  },
   syncGoogleSheetLeads
 );
+
 export default router;
