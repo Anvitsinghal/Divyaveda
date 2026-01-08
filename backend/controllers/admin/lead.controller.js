@@ -9,73 +9,86 @@ import { cleanLeadRow } from "../../utils/leadCleaner.js";
 ===================================================== */
 export const getAllLeads = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const currentUser = await User.findById(userId).populate("role_id");
+    const {
+      page = 1,
+      limit = 25,
+      search,
+      platform,
+      segment,
+      lead_status,
+      client_profile,
+      interest_level,
+      req_time,
+      assigned,
+      startDate, // Mapped from frontend 'from_date'
+      endDate    // Mapped from frontend 'to_date'
+    } = req.query;
 
-    const roleName = currentUser?.role_id?.role_name || "";
-    const isManagerOrAbove =
-      req.user.isSuperAdmin ||
-      ["Manager", "Admin", "Super Admin"].includes(roleName);
+    const query = { isActive: true };
 
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 25;
-    const skip = (page - 1) * limit;
-
-    let query = { isActive: true };
-
-    // 🔐 Visibility
-    if (!isManagerOrAbove) {
-      query.assigned_to = userId;
-    }
-
-    // Filters
-    if (req.query.platform) query.platform = req.query.platform;
-    if (req.query.segment) query.segment = req.query.segment;
-    if (req.query.client_profile) query.client_profile = req.query.client_profile;
-    if (req.query.lead_status) query.lead_status = req.query.lead_status;
-
-    // Date filter
-    if (req.query.from_date || req.query.to_date) {
-      query.createdAt = {};
-      if (req.query.from_date) query.createdAt.$gte = new Date(req.query.from_date);
-      if (req.query.to_date) query.createdAt.$lte = new Date(req.query.to_date);
-    }
-
-    // Search
-    if (req.query.search) {
-      const s = req.query.search;
+    // 1. Text Search
+    if (search) {
       query.$or = [
-        { full_name: { $regex: s, $options: "i" } },
-        { email: { $regex: s, $options: "i" } },
-        { phone: { $regex: s, $options: "i" } }
+        { full_name: { $regex: search, $options: "i" } },
+        { phone: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } }
       ];
     }
 
-    const total = await Lead.countDocuments(query);
-    const convertedCount = await Lead.countDocuments({ ...query, converted: true });
+    // 2. Dropdown Filters
+    if (platform) query.platform = platform;
+    if (segment) query.segment = segment;
+    if (lead_status) query.lead_status = lead_status;
+    if (client_profile) query.client_profile = client_profile;
+    if (interest_level) query.interest_level = interest_level;
+    if (req_time) query.req_time = req_time;
 
+    // 3. Assignment Filter
+    if (assigned === "assigned") {
+      query.assigned_to = { $ne: null };
+    } else if (assigned === "unassigned") {
+      query.assigned_to = null;
+    }
+
+    // 4. ✅ DATE FIX: Filter by 'created_date' (String) instead of 'createdAt'
+    // Since 'created_date' is stored as "YYYY-MM-DD", string comparison works perfectly.
+    if (startDate || endDate) {
+      query.created_date = {};
+      if (startDate) {
+        query.created_date.$gte = startDate; // e.g. "2025-10-01"
+      }
+      if (endDate) {
+        query.created_date.$lte = endDate;   // e.g. "2025-10-31"
+      }
+    }
+
+    // --- Execute Query ---
+    // Sorted by created_date descending (newest leads first)
     const leads = await Lead.find(query)
       .populate("assigned_to", "name email")
-      .populate("created_by", "name email")
       .populate("converted_by", "name email")
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
+      .sort({ created_date: -1 }) 
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
+
+    // Get Counts
+    const total = await Lead.countDocuments(query);
+    const convertedCount = await Lead.countDocuments({ ...query, converted: true });
+    const pendingCount = await Lead.countDocuments({ ...query, converted: false });
 
     res.json({
       data: leads,
       total,
       convertedCount,
-      pendingCount: total - convertedCount,
+      pendingCount,
       totalPages: Math.ceil(total / limit),
-      page
+      page: Number(page)
     });
   } catch (error) {
-    console.error("❌ Get Leads Error:", error);
+    console.error("Get Leads Error:", error);
     res.status(500).json({ message: error.message });
   }
 };
-
 /* =====================================================
    2. CREATE LEAD (Manual)
 ===================================================== */
