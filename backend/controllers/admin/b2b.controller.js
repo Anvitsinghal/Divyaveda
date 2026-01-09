@@ -6,7 +6,7 @@ import { User } from "../../models/user.master.js";
 
 const isManagerOrAbove = (user) => {
   const roleName = user?.role_id?.role_name || "";
-  return true;
+  return user?.isSuperAdmin === true || ["Manager", "Admin", "Super Admin"].includes(roleName);
 };
 
 const loadUserWithRole = async (req) => {
@@ -14,18 +14,14 @@ const loadUserWithRole = async (req) => {
 };
 
 /**
- * Leads visible to this user (ONLY converted leads)
+ * Leads visible to this user (ONLY converted + active)
+ * (used only as an extra safety filter when needed)
  */
 const getVisibleLeadIds = async (user) => {
   const query = {
     converted: true,
     isActive: true,
   };
-
-  // Staff → only their assigned leads
-  if (!isManagerOrAbove(user)) {
-    query.assigned_to = user._id;
-  }
 
   const leads = await Lead.find(query).select("_id");
   return leads.map((l) => l._id);
@@ -35,33 +31,82 @@ const getVisibleLeadIds = async (user) => {
 
 export const listB2B = async (req, res) => {
   try {
-    const user = await loadUserWithRole(req);
+    const { 
+      search, 
+      order_status, 
+      from_date, 
+      to_date, 
+      platform, 
+      segment, 
+      lead_id 
+    } = req.query;
 
-    const allowedLeadIds = await getVisibleLeadIds(user);
-    if (!allowedLeadIds.length) {
-      return res.json({ data: [], total: 0 });
+    const user = await User.findById(req.user.id).populate("role_id");
+    if (!user) return res.status(401).json({ message: "Unauthorized" });
+
+    const roleName = user?.role_id?.role_name || "";
+    const isManagerOrAbove =
+      user.isSuperAdmin === true ||
+      ["Manager", "Admin", "Super Admin"].includes(roleName);
+
+    // 1. Initialize Query
+    let query = {};
+
+    // 2. Role-Based Security (Existing)
+    if (!isManagerOrAbove) {
+      query.converted_by = req.user.id;
     }
 
-    const records = await B2B.find({
-      lead_id: { $in: allowedLeadIds },
-    })
+    // 3. Direct B2B Filters
+    if (lead_id) query.lead_id = lead_id;
+    if (order_status) query.order_status = order_status;
+
+    // 4. Text Search (Client Name or Mobile)
+    if (search) {
+      query.$or = [
+        { client_name: { $regex: search, $options: "i" } },
+        { mobile: { $regex: search, $options: "i" } }
+      ];
+    }
+
+    // 5. Date Range Filter (on order_date)
+    if (from_date || to_date) {
+      query.order_date = {};
+      if (from_date) query.order_date.$gte = new Date(from_date);
+      if (to_date) query.order_date.$lte = new Date(to_date);
+    }
+
+    // 6. Lead-Related Filters (Platform/Segment)
+    // Since these live on the Lead model, we find matching leads first
+    if (platform || segment) {
+      const leadCriteria = { converted: true };
+      if (platform) leadCriteria.platform = platform;
+      if (segment) leadCriteria.segment = segment;
+
+      const matchingLeads = await Lead.find(leadCriteria).select("_id");
+      const leadIds = matchingLeads.map(l => l._id);
+      
+      // Merge with existing query
+      query.lead_id = { $in: leadIds };
+    }
+
+    // Execute Query
+    const records = await B2B.find(query)
       .populate("lead_id")
       .populate("converted_by", "name email")
       .populate("created_by", "name email")
       .sort({ createdAt: -1 });
 
-    // 🔥 VERY IMPORTANT: remove broken records
-    const safeRecords = records.filter((r) => r.lead_id);
-
-    res.json({
-      data: safeRecords,
-      total: safeRecords.length,
+    res.json({ 
+      data: records, 
+      total: records.length 
     });
   } catch (error) {
-    console.error("LIST B2B ERROR:", error);
+    console.error("❌ listB2B error:", error);
     res.status(500).json({ message: error.message });
   }
 };
+
 
 /* ------------------ CREATE B2B ------------------ */
 
@@ -129,34 +174,49 @@ export const createB2B = async (req, res) => {
 
 export const updateB2B = async (req, res) => {
   try {
-    const user = await loadUserWithRole(req);
-    const record = await B2B.findById(req.params.id).populate("lead_id");
+    const b2bId = req.params.id;
+
+    const record = await B2B.findById(b2bId)
+      .populate("lead_id")
+      .populate("converted_by", "name email")
+      .populate("created_by", "name email");
 
     if (!record) {
       return res.status(404).json({ message: "B2B not found" });
     }
 
-    const lead = record.lead_id;
-    const canEdit =
-      isManagerOrAbove(user) ||
-      (lead?.assigned_to && lead.assigned_to.toString() === req.user.id);
+    // ❗ IMPORTANT:
+    // Permission is ALREADY handled by allowB2BEdit middleware
+    // DO NOT RECHECK PERMISSIONS HERE
 
-    if (!canEdit) {
-      return res.status(403).json({ message: "Not allowed to edit this B2B" });
-    }
+    const updates = {};
 
-    const updates = {
-      total_order_value: record.total_order_value,
-      amount_received: record.amount_received,
-      ...req.body,
-    };
+    const allowedFields = [
+      "order_date",
+      "order_details",
+      "total_order_value",
+      "amount_received",
+      "last_receipt_date",
+      "order_status",
+      "additional_remarks",
+    ];
 
-    updates.amount_pending =
-      Number(updates.total_order_value || 0) -
-      Number(updates.amount_received || 0);
+    allowedFields.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        updates[field] = req.body[field];
+      }
+    });
+
+    // Auto-calc pending
+    const total =
+      updates.total_order_value ?? record.total_order_value ?? 0;
+    const received =
+      updates.amount_received ?? record.amount_received ?? 0;
+
+    updates.amount_pending = total - received;
 
     const updated = await B2B.findByIdAndUpdate(
-      record._id,
+      b2bId,
       updates,
       { new: true }
     )
@@ -164,9 +224,13 @@ export const updateB2B = async (req, res) => {
       .populate("converted_by", "name email")
       .populate("created_by", "name email");
 
-    res.json({ message: "B2B updated", data: updated });
+    res.json({
+      message: "B2B updated successfully",
+      data: updated,
+    });
   } catch (error) {
-    console.error("UPDATE B2B ERROR:", error);
+    console.error("❌ Update B2B Error:", error);
     res.status(500).json({ message: error.message });
   }
 };
+

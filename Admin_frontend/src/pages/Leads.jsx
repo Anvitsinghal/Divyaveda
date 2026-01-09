@@ -505,7 +505,7 @@ const Leads = () => {
                             onClick={() => navigate(`/admin/b2b?lead=${l._id}`)} 
                             className={`font-semibold text-xs uppercase tracking-wide text-left ${isDark ? "text-green-400 hover:text-green-300" : "text-green-600 hover:text-green-800"}`}
                             >
-                            View B2B
+                            
                             </button>
                         )}
                         </div>
@@ -652,8 +652,18 @@ const Leads = () => {
                     </div>
                     <div>
                         <label className={labelClass}>Call Outcome</label>
-                        <input className={inputClass}
-                            value={formData.call_outcome} onChange={e => setFormData({...formData, call_outcome: e.target.value})} />
+                       <select
+  value={formData.call_outcome}
+  onChange={(e) =>
+    setFormData({ ...formData, call_outcome: e.target.value })
+  }
+  className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white"
+>
+  <option value="">Select</option>
+  <option value="connected">Connected</option>
+  <option value="not_connected">Not Connected</option>
+</select>
+
                     </div>
                     <div>
                         <label className={labelClass}>Assign To</label>
